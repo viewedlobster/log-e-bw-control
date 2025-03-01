@@ -1,4 +1,4 @@
-package se.loge.bwcontrol;
+package se.loge.bwcontrol.mpk;
 import java.util.UUID;
 
 import com.bitwig.extension.api.PlatformType;
@@ -17,7 +17,7 @@ public class MPK261ExtensionDefinition extends ControllerExtensionDefinition
    @Override
    public String getName()
    {
-      return "MPK 261 lnsol delux";
+      return "MPK 261 log-e";
    }
    
    @Override
@@ -41,7 +41,7 @@ public class MPK261ExtensionDefinition extends ControllerExtensionDefinition
    @Override
    public String getHardwareVendor()
    {
-      return "AKAI";
+      return "Akai";
    }
    
    @Override
