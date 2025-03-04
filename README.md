@@ -1,5 +1,14 @@
 # MPK 261 bitwig control script
 
+Work in progress. There is currently basic functionality in that you can play
+the keyboard and pads, and map other controls manually.
+
+Some things that is still to be implemented is:
+* pad lighs
+* mode for playing clips
+* transport buttons
+* daw control buttons
+
 ## structure of MPK261 hardware
 
 So far i know the following structure
