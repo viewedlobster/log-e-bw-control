@@ -11,42 +11,34 @@ public class HWTransport implements HWIMidiIn {
   final HardwareButton ffwd;
   final HardwareButton rwd;
 
-  private final int MIDI_TRANSPORT_CHANNEL = 0x00;
-  public final int MIDI_TRANSPORT_PLAY = 0x1;
-  public final int MIDI_TRANSPORT_STOP = 0x2;
-  public final int MIDI_TRANSPORT_REC  = 0x3;
-  public final int MIDI_TRANSPORT_FFWD = 0x4;
-  public final int MIDI_TRANSPORT_RWD  = 0x5;
+  public final int MIDI_TRANSPORT_CHANNEL = 0;
 
-  public final int MIDI_TRANSPORT_CC = 102;
-  public final int MIDI_TRANSPORT_CCV_STOP = 0;
-  public final int MIDI_TRANSPORT_CCV_PLAY = 1;
-  public final int MIDI_TRANSPORT_CCV_FFWD = 2;
-  public final int MIDI_TRANSPORT_CCV_RWD  = 3;
-  public final int MIDI_TRANSPORT_CCV_REC  = 4;
+  public final int MIDI_TRANSPORT_CC_RWD  = 115;
+  public final int MIDI_TRANSPORT_CC_FFWD = 116;
+  public final int MIDI_TRANSPORT_CC_STOP = 117;
+  public final int MIDI_TRANSPORT_CC_PLAY = 118;
+  public final int MIDI_TRANSPORT_CC_REC  = 119;
+
+  public final int MIDI_TRANSPORT_VAL_ON_PRESS = 127;
 
   public HWTransport(HardwareSurface hwsurface) {
-    play = hwsurface.createHardwareButton("transport_play");
-    stop = hwsurface.createHardwareButton("transport_stop");
-    rec = hwsurface.createHardwareButton("transport_rec");
-    ffwd = hwsurface.createHardwareButton("transport_ffwd");
     rwd = hwsurface.createHardwareButton("transport_rwd");
-
-    
-    // TODO initialize buttons
+    ffwd = hwsurface.createHardwareButton("transport_ffwd");
+    stop = hwsurface.createHardwareButton("transport_stop");
+    play = hwsurface.createHardwareButton("transport_play");
+    rec = hwsurface.createHardwareButton("transport_rec");
   }
 
   public void connectMidiIn(MidiIn midiIn, MidiIn... rest) {
-    stop.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
-      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC, MIDI_TRANSPORT_CCV_STOP));
-    play.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
-      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC, MIDI_TRANSPORT_CCV_PLAY));
-    ffwd.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
-      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC, MIDI_TRANSPORT_CCV_FFWD));
     rwd.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
-      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC, MIDI_TRANSPORT_CCV_RWD));
+      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_RWD, MIDI_TRANSPORT_VAL_ON_PRESS));
+    ffwd.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
+      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_FFWD, MIDI_TRANSPORT_VAL_ON_PRESS));
+    stop.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
+      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_STOP, MIDI_TRANSPORT_VAL_ON_PRESS));
+    play.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
+      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_PLAY, MIDI_TRANSPORT_VAL_ON_PRESS));
     rec.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
-      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC, MIDI_TRANSPORT_CCV_REC));
+      MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_REC, MIDI_TRANSPORT_VAL_ON_PRESS));
   }
-
 }

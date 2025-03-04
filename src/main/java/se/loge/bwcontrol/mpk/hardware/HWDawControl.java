@@ -1,9 +1,10 @@
 package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.HardwareButton;
 
-public class HWDawControl {
+public class HWDawControl implements HWIMidiIn {
   final HardwareButton enter;
   final HardwareButton up;
   final HardwareButton down;
@@ -24,7 +25,10 @@ public class HWDawControl {
     left = hwsurface.createHardwareButton("dawc_left");
     right = hwsurface.createHardwareButton("dawc_right");
 
-    // TODO init buttons
+  }
+
+  public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
+    // TODO: implement
   }
 
 }

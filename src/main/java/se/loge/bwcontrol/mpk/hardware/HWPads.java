@@ -1,14 +1,11 @@
 package se.loge.bwcontrol.mpk.hardware;
 
-import java.time.chrono.MinguoChronology;
-
-import javax.sound.midi.MidiChannel;
-
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 
-public class HWPads {
+public class HWPads implements HWIMidiIn, HWIMidiOut {
   static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
   static final String[] MPK_PAD_BANK_NAMES = {
     "A",
@@ -37,11 +34,17 @@ public class HWPads {
       padBanks[i].connectMidiIn(midiIn, midiIns);
     }
     noteIn = midiIn.createNoteInput(MPK_PADS_NOTE_INPUT_ID,
-      String.format("8%x????", MPK_PADS_MIDI_CHANNEL),
-      String.format("9%x????", MPK_PADS_MIDI_CHANNEL),
-      String.format("a%x????", MPK_PADS_MIDI_CHANNEL));
-      /* here i think the the last one is necessary, since pads support poly aftertouch */
+      String.format("8%x????", MPK_PADS_MIDI_CHANNEL), // note off
+      String.format("9%x????", MPK_PADS_MIDI_CHANNEL), // note on
+      String.format("a%x????", MPK_PADS_MIDI_CHANNEL), // poly aftertouch
+      String.format("d%x????", MPK_PADS_MIDI_CHANNEL) // mono aftertouch
+      );
   }
+
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    // TODO: implement
+  }
+
 
 
 }

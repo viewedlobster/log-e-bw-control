@@ -4,8 +4,10 @@ import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
+import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.MidiOut;
 
-public class HWControlBank {
+public class HWControlBank implements HWIMidiIn, HWIMidiOut {
   public final int MPK261_NUM_CONTROL_STRIPS = 8;
   
   final HardwareButton[] S;
@@ -32,7 +34,15 @@ public class HWControlBank {
       F[i] = hwsurface.createHardwareSlider(String.format("cbank_%s_F_%d", id, i));
     }
 
-    // TODO initialize controls
+    // TODO: add the lights
+  }
+
+  public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
+    // TODO implement
+  }
+
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    // TODO implement
   }
 
 
