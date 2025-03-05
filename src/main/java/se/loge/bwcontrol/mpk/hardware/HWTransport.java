@@ -2,9 +2,10 @@ package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
+import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.api.HardwareButton;
 
-public class HWTransport implements HWIMidiIn {
+public class HWTransport implements HWIMidiIn, HWIHasHost {
   final HardwareButton play;
   final HardwareButton stop;
   final HardwareButton rec;
@@ -40,5 +41,12 @@ public class HWTransport implements HWIMidiIn {
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_PLAY, MIDI_TRANSPORT_VAL_ON_PRESS));
     rec.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_REC, MIDI_TRANSPORT_VAL_ON_PRESS));
+
+    Transport t = transport();
+    rwd.pressedAction().addBinding(t.rewindAction());
+    ffwd.pressedAction().addBinding(t.fastForwardAction());
+    stop.pressedAction().addBinding(t.stopAction());
+    play.pressedAction().addBinding(t.playAction());
+    rec.pressedAction().addBinding(t.recordAction());
   }
 }

@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.Transport;
 
 import se.loge.bwcontrol.HostDebug;
+import se.loge.bwcontrol.common.MPKStore;
 import se.loge.bwcontrol.mpk.hardware.HWController;
 
 import com.bitwig.extension.controller.ControllerExtension;
@@ -32,6 +33,7 @@ public class MPK261Extension extends ControllerExtension
       final ControllerHost host = getHost();
 
       HostDebug.setHost(host);
+      MPKStore.initStore(host);
 
       final HardwareSurface hwsurface = host.createHardwareSurface();
       hwController = new HWController(hwsurface);
