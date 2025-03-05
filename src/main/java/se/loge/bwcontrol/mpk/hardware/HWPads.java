@@ -5,7 +5,11 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 
-public class HWPads implements HWIMidiIn, HWIMidiOut {
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
+
+public class HWPads implements HWIMidiIn, HWIMidiOut, HWINoteInput {
   static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
   static final String[] MPK_PAD_BANK_NAMES = {
     "A",
@@ -17,7 +21,8 @@ public class HWPads implements HWIMidiIn, HWIMidiOut {
 
   static final int MPK_PADS_MIDI_CHANNEL = 9;
 
-  NoteInput noteIn;
+  private MidiIn in;
+  private NoteInput noteIn;
   private final HWPadBank[] padBanks;
 
   public HWPads(HardwareSurface hwsurface) {
@@ -33,7 +38,11 @@ public class HWPads implements HWIMidiIn, HWIMidiOut {
     for (int i = 0; i < padBanks.length; i++) {
       padBanks[i].connectMidiIn(midiIn, midiIns);
     }
-    noteIn = midiIn.createNoteInput(MPK_PADS_NOTE_INPUT_ID,
+    in = midiIn;
+  }
+
+  public void bindNoteInput() {
+    noteIn = in.createNoteInput(MPK_PADS_NOTE_INPUT_ID,
       String.format("8%x????", MPK_PADS_MIDI_CHANNEL), // note off
       String.format("9%x????", MPK_PADS_MIDI_CHANNEL), // note on
       String.format("a%x????", MPK_PADS_MIDI_CHANNEL), // poly aftertouch

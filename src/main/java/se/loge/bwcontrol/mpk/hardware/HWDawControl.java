@@ -2,9 +2,13 @@ package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
+
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+
 import com.bitwig.extension.controller.api.HardwareButton;
 
-public class HWDawControl implements HWIMidiIn {
+public class HWDawControl implements HWIMidiIn, HWIControlCC {
   final HardwareButton enter;
   final HardwareButton up;
   final HardwareButton down;
@@ -27,8 +31,13 @@ public class HWDawControl implements HWIMidiIn {
 
   }
 
+
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
     // TODO: implement
+  }
+
+  public void bindCCActions() {
+    // TODO implement
   }
 
 }

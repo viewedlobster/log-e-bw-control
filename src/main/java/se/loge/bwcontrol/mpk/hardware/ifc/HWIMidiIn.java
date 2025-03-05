@@ -1,4 +1,4 @@
-package se.loge.bwcontrol.mpk.hardware;
+package se.loge.bwcontrol.mpk.hardware.ifc;
 
 import com.bitwig.extension.controller.api.MidiIn;
 

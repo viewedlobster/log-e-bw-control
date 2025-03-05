@@ -7,7 +7,11 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class HWControlBank implements HWIMidiIn, HWIMidiOut {
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
+
+public class HWControlBank implements HWIMidiIn, HWIMidiOut, HWIControlCC {
   public final int MPK261_NUM_CONTROL_STRIPS = 8;
   
   final HardwareButton[] S;
@@ -38,6 +42,10 @@ public class HWControlBank implements HWIMidiIn, HWIMidiOut {
   }
 
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
+    // TODO implement
+  }
+
+  public void bindCCActions() {
     // TODO implement
   }
 

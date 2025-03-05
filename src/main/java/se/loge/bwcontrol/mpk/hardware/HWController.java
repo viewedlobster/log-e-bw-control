@@ -5,7 +5,12 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class HWController implements HWIMidiIn, HWIMidiOut{
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
+
+public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIControlCC {
 
    ControllerExtension ext;
 
@@ -51,6 +56,19 @@ public class HWController implements HWIMidiIn, HWIMidiOut{
 
       for (int i = 0; i < controlBanks.length; i++) {
          controlBanks[i].connectMidiIn(midiIn);
+      }
+   }
+
+   public void bindNoteInput() {
+      pianoKeys.bindNoteInput();
+      pads.bindNoteInput();
+   }
+
+   public void bindCCActions() {
+      transport.bindCCActions();
+      dawControl.bindCCActions();
+      for (HWControlBank bank : controlBanks) {
+         bank.bindCCActions();
       }
    }
 

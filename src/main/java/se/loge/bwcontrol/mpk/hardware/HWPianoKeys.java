@@ -7,6 +7,7 @@ import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PianoKeyboard;
 
 import se.loge.bwcontrol.HostDebug;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 
 public class HWPianoKeys implements HWIMidiIn {
   final static int MPK261_NUM_KEYS      = 61;
@@ -20,6 +21,7 @@ public class HWPianoKeys implements HWIMidiIn {
   static final int MPK_MOD_WHEEL_MIDI_CC = 1;
   
   final PianoKeyboard keys;
+  private MidiIn in;
   private NoteInput noteIn;
 
   HardwareSlider modWheel;
@@ -36,7 +38,11 @@ public class HWPianoKeys implements HWIMidiIn {
       midiIn.createAbsoluteCCValueMatcher(
         MPK_KEYS_MIDI_CHANNEL, MPK_MOD_WHEEL_MIDI_CC));
 
-    noteIn = midiIn.createNoteInput(MPK_NOTE_INPUT_ID,
+    in = midiIn;
+  }
+
+  public void bindNoteInput() {
+    noteIn = in.createNoteInput(MPK_NOTE_INPUT_ID,
       String.format("8%x????", MPK_KEYS_MIDI_CHANNEL), // note off
       String.format("9%x????", MPK_KEYS_MIDI_CHANNEL), // note on
       //String.format("a%x????", MPK_KEYS_MIDI_CHANNEL), // poly aftertouch
