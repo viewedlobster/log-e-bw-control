@@ -25,6 +25,6 @@ here on github.
 
 Some features i want to add include:
 * Mode for playing clips using pads
-* Pad LED indications for drum machine and clip player
+* Pad LEDs supporting drum machine and clip playing
 * Controls for easy on-the-fly clip recording
 
