@@ -93,9 +93,7 @@ public class MPK261ExtensionDefinition extends ControllerExtensionDefinition
    {
       if (platformType == PlatformType.WINDOWS)
       {
-         // TODO: Set the correct names of the ports for auto detection on Windows platform here
-         // and uncomment this when port names are correct.
-         // list.add(new String[]{"Input Port 0", "Input Port 1"}, new String[]{"Output Port 0", "Output Port 1"});
+         list.add(new String[]{"MPK261", "MIDIIN4 (MPK261)"}, new String[]{"MPK261","MIDIOUT4 (MPK261)"});
       }
       else if (platformType == PlatformType.MAC)
       {
@@ -103,9 +101,7 @@ public class MPK261ExtensionDefinition extends ControllerExtensionDefinition
       }
       else if (platformType == PlatformType.LINUX)
       {
-         // TODO: Set the correct names of the ports for auto detection on Windows platform here
-         // and uncomment this when port names are correct.
-         // list.add(new String[]{"Input Port 0", "Input Port 1"}, new String[]{"Output Port 0", "Output Port 1"});
+         list.add(new String[]{"MPK261 MIDI 1", "MPK261 MIDI 4"}, new String[]{"MPK261 MIDI 1", "MPK261 MIDI 4"});
       }
    }
 
