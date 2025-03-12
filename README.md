@@ -1,4 +1,4 @@
-# MPK-261
+# log-e-bw-control
 
 A custom bitwig controller script for the Akai Professional MPK261 keyboard. The
 original implementation from Akai is outdated and was pretty unusable. This
