@@ -18,16 +18,9 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
 
    private HWTransport transport;
    private HWDawControl dawControl;
-   private HWControlBank[] controlBanks;
+   private HWControlBank bankA, bankB, bankC;
    private HWPianoKeys pianoKeys;
    private HWPads pads;
-
-
-   static final String[] MPK_CONTROL_BANK_NAMES = {
-      "A",
-      "B",
-      "C",
-   };
 
    static final int MPK_NUM_MIDI_IN             = 2;
    static final int MPK_NUM_MIDI_OUT            = 2;
@@ -40,10 +33,9 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       pianoKeys = new HWPianoKeys(hwsurface);
       pads = new HWPads(hwsurface);
 
-      controlBanks = new HWControlBank[MPK_CONTROL_BANK_NAMES.length];
-      for (int i = 0; i < MPK_CONTROL_BANK_NAMES.length; i++) {
-         controlBanks[i] = new HWControlBank(hwsurface, MPK_CONTROL_BANK_NAMES[i]);
-      }
+      bankA = new HWControlBankA(hwsurface);
+      bankB = new HWControlBankB(hwsurface);
+      bankC = new HWControlBankC(hwsurface);
    }
 
    public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
@@ -54,8 +46,8 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       pianoKeys.connectMidiIn(midiIn);
       pads.connectMidiIn(midiIn);
 
-      for (int i = 0; i < controlBanks.length; i++) {
-         controlBanks[i].connectMidiIn(midiIn);
+      for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
+         bank.connectMidiIn(midiIn);
       }
    }
 
@@ -67,14 +59,15 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
    public void bindCCActions() {
       transport.bindCCActions();
       dawControl.bindCCActions();
-      for (HWControlBank bank : controlBanks) {
+
+      for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
          bank.bindCCActions();
       }
    }
 
-   public void connectMidiOut(MidiOut out, MidiOut... midiOuts) {
+   public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
       assert(midiOuts.length == MPK_NUM_MIDI_OUT - 1);
-      
+      bankA.connectMidiOut(midiOut);
    }
 
 }

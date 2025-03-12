@@ -46,7 +46,6 @@ public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_PLAY, MIDI_TRANSPORT_VAL_ON_PRESS));
     rec.pressedAction().setActionMatcher(midiIn.createCCActionMatcher(
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_REC, MIDI_TRANSPORT_VAL_ON_PRESS));
-
   }
 
   public void bindCCActions() {

@@ -6,10 +6,11 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.Transport;
 
 import se.loge.bwcontrol.HostDebug;
+import se.loge.bwcontrol.common.CallbackRegistry;
 import se.loge.bwcontrol.common.MPKStore;
+import se.loge.bwcontrol.common.CallbackPair;
 import se.loge.bwcontrol.mpk.hardware.HWController;
 
 import com.bitwig.extension.controller.ControllerExtension;
@@ -19,8 +20,7 @@ import com.bitwig.extension.controller.ControllerExtension;
 public class MPK261Extension extends ControllerExtension
 {
    private HWController hwController;
-
-   private Transport bwTransport;
+   private CallbackPair<CallbackRegistry<ShortMidiMessage>, CallbackRegistry<String>> cbp;
 
    protected MPK261Extension(final MPK261ExtensionDefinition definition, final ControllerHost host)
    {
@@ -43,10 +43,15 @@ public class MPK261Extension extends ControllerExtension
       MidiOut midiOut0 = host.getMidiOutPort(0);
       MidiOut midiOut1 = host.getMidiOutPort(1);
 
+      cbp = MPKStore.getStore().registerMidiIn(midiIn0);
+
       hwController.connectMidiIn(midiIn0, midiIn1);
       host.println("Midi In connected");
       hwController.connectMidiOut(midiOut0, midiOut1);
       host.println("Midi Out connected");
+
+      hwController.bindNoteInput();
+      hwController.bindCCActions();
 
       // bwTransport = host.createTransport();
       midiIn0.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
@@ -78,13 +83,16 @@ public class MPK261Extension extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi0(ShortMidiMessage msg) 
    {
-      getHost().println("Midi0: " + msg.toString());
+      if (!cbp.midi.invoke(msg))
+         getHost().println("Midi0: " + msg.toString());
       // TODO: Implement your MIDI input handling code here.
    }
 
    /** Called when we receive sysex MIDI message on port 0. */
    private void onSysex0(final String data) 
    {
+      if (!cbp.sysex.invoke(data))
+         getHost().println("Sysex0: " + data);
       // MMC Transport Controls:
       //if (data.equals("f07f7f0605f7"))
       //      bwTransport.rewind();
@@ -97,7 +105,6 @@ public class MPK261Extension extends ControllerExtension
       //else if (data.equals("f07f7f0606f7"))
       //      bwTransport.record();
 
-      getHost().println("Sysex0: " + data);
    }
    /** Called when we receive short MIDI message on port 1. */
    private void onMidi1(ShortMidiMessage msg) 

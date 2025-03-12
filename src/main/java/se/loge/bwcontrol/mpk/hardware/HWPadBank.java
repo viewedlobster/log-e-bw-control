@@ -3,8 +3,10 @@ package se.loge.bwcontrol.mpk.hardware;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
+
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+
 import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareControl;
 
 public class HWPadBank implements HWIMidiIn {
 
