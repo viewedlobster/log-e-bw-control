@@ -42,8 +42,10 @@ public class HWPads implements HWIMidiIn, HWIMidiOut, HWINoteInput {
   static final int MPK_PADS_MIDI_CHANNEL = 9;
 
   private MidiIn in;
-  private NoteInput noteIn;
   private final HWPadBank[] padBanks;
+
+  @SuppressWarnings("unused")
+  private NoteInput noteIn;
 
   public HWPads(HardwareSurface hwsurface) {
 

@@ -41,6 +41,8 @@ public class HWPianoKeys implements HWIMidiIn {
   
   final PianoKeyboard keys;
   private MidiIn in;
+
+  @SuppressWarnings("unused")
   private NoteInput noteIn;
 
   HardwareSlider modWheel;
@@ -72,7 +74,6 @@ public class HWPianoKeys implements HWIMidiIn {
       String.format("d%x????", MPK_KEYS_MIDI_CHANNEL), // mono aftertouch
       String.format("e%x????", MPK_KEYS_MIDI_CHANNEL)  // pitch bend
       );
-    noteIn.setShouldConsumeEvents(false);
   }
 
 }

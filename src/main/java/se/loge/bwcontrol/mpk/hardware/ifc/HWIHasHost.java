@@ -23,6 +23,7 @@ package se.loge.bwcontrol.mpk.hardware.ifc;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorTrack;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.Transport;
 
 import se.loge.bwcontrol.common.ExtensionStore;
@@ -48,7 +49,16 @@ public interface HWIHasHost {
     return ExtensionStore.getStore().getPrimaryInstrumentCursor();
   }
 
+  public default HardwareActionBindable customAction(Runnable r, String descr) {
+    return host().createAction(r, () -> descr);
+  }
+
+  public default HardwareActionBindable customAction(Runnable r) {
+    return host().createAction(r, () -> { return "log-e-bw-control internal action"; });
+  }
+
   public default void println(String s) {
     host().println(s);
   }
+
 }

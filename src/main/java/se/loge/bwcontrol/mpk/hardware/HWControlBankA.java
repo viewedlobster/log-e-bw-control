@@ -20,7 +20,6 @@
 
 package se.loge.bwcontrol.mpk.hardware;
 
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -40,6 +39,7 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
   static final int[] CONTROL_BANK_SOLO_CC = { 28, 29, 30, 31, 35, 41, 46, 47 };
 
   static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
+  static final int CONTROL_BANK_SOLO_RELEASED_VAL = 0;
 
   static final int CONTROL_BANK_CC_STATUS_BYTE = 0xb0 + CONTROL_BANK_MIDI_CHANNEL;
 
@@ -73,43 +73,17 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
 
     activeCursor = controlsK;
     lights = new int[]{ 0, 0, 0, 0, 0, 0, 0, 0 };
-    if (activeCursor.pageCount().get() > 0) {
-      activeCursor.selectedPageIndex().set(0);
-    }
 
-    controlsK.selectedPageIndex().addValueObserver(val -> updateLights());
-    controlsK.pageCount().addValueObserver(val -> updateLights());
-    controlsF.selectedPageIndex().addValueObserver(val -> updateLights());
-    controlsF.pageCount().addValueObserver(val -> updateLights());
+    controlsK.selectedPageIndex().addValueObserver(val -> { if (isActive(controlsK)) updateLights(val, false); });
+    controlsF.selectedPageIndex().addValueObserver(val -> { if (isActive(controlsF)) updateLights(val, true); });
 
   }
 
-  private void toggleActiveCursor() {
-    if (activeCursor == controlsK) {
-      activeCursor = controlsF;
-    } else {
-      activeCursor = controlsK;
-    }
+  boolean isActive(CursorRemoteControlsPage c) {
+    return c == activeCursor;
   }
 
-  private void pickActiveCursorPage(int i) {
-    assert(i >= 0);
-
-    int pageCount = activeCursor.pageCount().get();
-    if (pageCount <= i) {
-      i = pageCount - 1;
-    }
-
-    if (i < 0) {
-      return;
-    }
-
-    println(String.format("Setting page index: %d", i));
-    /* Triggers a light update via callback */
-    activeCursor.selectedPageIndex().set(i);
-  }
-
-  private void updateLights() {
+  private void updateLights(int pageIdx, boolean apLight) {
 
     /* reset lights */
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
@@ -117,14 +91,13 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     }
 
     /* active cursor light */
-    if (activeCursor == controlsF) {
+    if (apLight) {
       lights[MPK261_NUM_CONTROL_STRIPS - 1] = LIGHT_ON;
     }
 
     /* page light */
-    int pageIdx = activeCursor.selectedPageIndex().get();
     println(String.format("page-idx: %d", pageIdx));
-    if (pageIdx >= 0) {
+    if (pageIdx >= 0 && pageIdx < MPK261_NUM_CONTROL_STRIPS) {
 
       assert(pageIdx < MPK261_NUM_CONTROL_STRIPS - 1);
 
@@ -142,46 +115,11 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     }
   }
 
-  private boolean onMidi0Action(ShortMidiMessage msg) {
-    int i;
+  private void syncLight(int pageIdx) {
+    if (midi0Out == null)
+      return;
 
-    if (msg.getStatusByte() != CONTROL_BANK_CC_STATUS_BYTE) {
-      return false;
-    }
-
-    if (msg.getChannel() != CONTROL_BANK_MIDI_CHANNEL) {
-      return false;
-    }
-
-    for (i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      if (msg.getData1() == CONTROL_BANK_SOLO_CC[i])
-        break;
-    }
-
-    if (i > MPK261_NUM_CONTROL_STRIPS) return false;
-
-    println(String.format("got solo button press: %d", i));
-    if (msg.getData2() == CONTROL_BANK_SOLO_PRESSED_VAL) {
-      switch (i) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-          pickActiveCursorPage(i);
-          return true;
-        case 7:
-          toggleActiveCursor();
-          return true;
-        default:
-          return false;
-      }
-    } else {
-      updateLights();
-      return true;
-    }
+    midi0Out.sendMidi(CONTROL_BANK_CC_STATUS_BYTE, CONTROL_BANK_SOLO_CC[pageIdx], lights[pageIdx]);
   }
 
   @Override
@@ -189,9 +127,12 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     midi0In = midiIn;
 
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      //S[i].pressedAction().setActionMatcher(
-      //  midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-      //    CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
+      S[i].pressedAction().setActionMatcher(
+        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
+          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
+      S[i].releasedAction().setActionMatcher(
+        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
+          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_RELEASED_VAL));
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -210,7 +151,49 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       r = controlsF.getParameter(i); r.setIndication(true); r.addBinding(F[i]);
     }
 
-    registerMidiCallback(midi0In, (msg) -> onMidi0Action(msg));
+    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
+      final int icopy = i;
+      S[i].pressedAction().addBinding(customAction(
+        () -> {
+          println("got a toggle on: S" + Integer.toString(icopy+1));
+          if (icopy < activeCursor.pageCount().get()) {
+            activeCursor.selectedPageIndex().set(icopy);
+          } else {
+            syncLight(icopy);
+          }
+        }
+      ));
+    }
+
+    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
+      final int icopy = i;
+      S[i].releasedAction().addBinding(customAction(
+        () -> {
+          println("got a toggle off: S" + Integer.toString(icopy+1));
+          syncLight(icopy);
+        }
+      ));
+    }
+
+    S[MPK261_NUM_CONTROL_STRIPS-1].pressedAction().addBinding(customAction(
+      () -> {
+        if (activeCursor == controlsF) {
+          println("OOPS -- cb:A:S8 pressed: state mismatch between controller and host");
+        }
+        activeCursor = controlsF;
+      }
+    ));
+
+    S[MPK261_NUM_CONTROL_STRIPS-1].releasedAction().addBinding(customAction(
+      () -> {
+        if (activeCursor == controlsF) {
+          println("OOPS -- cb:A:S8 released: state mismatch between controller and host");
+        }
+        activeCursor = controlsK;
+      }
+    ));
+
+    // registerMidiCallback(midi0In, (msg) -> onMidi0Action(msg));
     /* S1-S4 are bound to knob and fader remote controls page navigation */ 
     /*S[0].pressedAction().addBinding(controlsK.selectPreviousAction());
     S[1].pressedAction().addBinding(controlsK.selectNextAction());
@@ -234,7 +217,7 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
   @Override
   public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
     midi0Out = midiOut;
-    updateLights();
+    updateLights(activeCursor.selectedPageIndex().get(), isActive(controlsF));
   }
 
 
