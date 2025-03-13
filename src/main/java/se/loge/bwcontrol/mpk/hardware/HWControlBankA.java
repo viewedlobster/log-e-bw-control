@@ -46,10 +46,8 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
   static final int LIGHT_ON = 127;
   static final int LIGHT_OFF = 0;
 
-  private MidiIn midi0In;
   private MidiOut midi0Out;
 
-  private CursorDevice device;
   private CursorRemoteControlsPage controlsF;
   private CursorRemoteControlsPage controlsK;
 
@@ -60,7 +58,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
   public HWControlBankA(HardwareSurface surface) {
     super(surface, CONTROL_BANK_ID);
 
-    device = primaryInstrument();
     controlsK = primaryInstrument().createCursorRemoteControlsPage(
       "MPK Bank A Knobs", MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-knobs");
     controlsF = primaryInstrument().createCursorRemoteControlsPage(
@@ -96,7 +93,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     }
 
     /* page light */
-    println(String.format("page-idx: %d", pageIdx));
     if (pageIdx >= 0 && pageIdx < MPK261_NUM_CONTROL_STRIPS) {
 
       assert(pageIdx < MPK261_NUM_CONTROL_STRIPS - 1);
@@ -104,8 +100,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       lights[pageIdx] = LIGHT_ON;
     }
 
-    println(String.format("bank-a-lights: { %d, %d, %d, %d, %d, %d, %d, %d }",
-      lights[0], lights[1], lights[2], lights[3], lights[4], lights[5], lights[6], lights[7]));
     /* dont send data if midi output is not initialized yet */
     if (midi0Out == null)
       return;
@@ -122,10 +116,14 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     midi0Out.sendMidi(CONTROL_BANK_CC_STATUS_BYTE, CONTROL_BANK_SOLO_CC[pageIdx], lights[pageIdx]);
   }
 
+  @SuppressWarnings("unused")
+  private void printLights() {
+    println(String.format("bank-a-lights: { %d, %d, %d, %d, %d, %d, %d, %d }",
+      lights[0], lights[1], lights[2], lights[3], lights[4], lights[5], lights[6], lights[7]));
+  }
+
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    midi0In = midiIn;
-
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
       S[i].pressedAction().setActionMatcher(
         midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
@@ -155,7 +153,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       final int icopy = i;
       S[i].pressedAction().addBinding(customAction(
         () -> {
-          println("got a toggle on: S" + Integer.toString(icopy+1));
           if (icopy < activeCursor.pageCount().get()) {
             activeCursor.selectedPageIndex().set(icopy);
           } else {
@@ -169,7 +166,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       final int icopy = i;
       S[i].releasedAction().addBinding(customAction(
         () -> {
-          println("got a toggle off: S" + Integer.toString(icopy+1));
           syncLight(icopy);
         }
       ));
