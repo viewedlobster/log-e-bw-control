@@ -20,7 +20,6 @@
 
 package se.loge.bwcontrol.mpk.hardware;
 
-import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
