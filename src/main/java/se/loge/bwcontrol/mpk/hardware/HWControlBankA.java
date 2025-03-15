@@ -174,39 +174,24 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       () -> {
         if (activeCursor == controlsF) {
           println("OOPS -- cb:A:S8 pressed: state mismatch between controller and host");
+        } else {
+          activeCursor = controlsF;
+          updateLights(activeCursor.selectedPageIndex().get(), true);
         }
-        activeCursor = controlsF;
       }
     ));
 
     S[MPK261_NUM_CONTROL_STRIPS-1].releasedAction().addBinding(customAction(
       () -> {
-        if (activeCursor == controlsF) {
+        if (activeCursor == controlsK) {
           println("OOPS -- cb:A:S8 released: state mismatch between controller and host");
+        } else {
+          activeCursor = controlsK;
+          updateLights(activeCursor.selectedPageIndex().get(), false);
         }
-        activeCursor = controlsK;
       }
     ));
 
-    // registerMidiCallback(midi0In, (msg) -> onMidi0Action(msg));
-    /* S1-S4 are bound to knob and fader remote controls page navigation */ 
-    /*S[0].pressedAction().addBinding(controlsK.selectPreviousAction());
-    S[1].pressedAction().addBinding(controlsK.selectNextAction());
-    S[2].pressedAction().addBinding(controlsF.selectPreviousAction());
-    S[3].pressedAction().addBinding(controlsF.selectNextAction());
-    */
-    /* S5-S8 remain unbound */
-    /* Ideas for use
-     * - setting pad mode: 
-     *   * play instrument
-     *   * play clips current track,
-     *   * rec clips current track, 
-     *   * global queues/actions (i.e. bound manually)
-     */
-    // S[4].pressedAction().addBinding(null);
-    // S[5].pressedAction().addBinding(null);
-    // S[6].pressedAction().addBinding(null);
-    // S[7].pressedAction().addBinding(null);
   }
 
   @Override
