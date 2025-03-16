@@ -80,6 +80,9 @@ public class MPK261Extension extends ControllerExtension
       midiIn1.setSysexCallback((String data) -> onSysex1(data));
 
 
+      hwsurface.updateHardware();
+
+
 
       // playButton.pressedAction().port
 
@@ -97,7 +100,7 @@ public class MPK261Extension extends ControllerExtension
    @Override
    public void flush()
    {
-      // TODO Send any updates you need here.
+      MPKStore.getStore().updateHardware();
    }
 
    /** Called when we receive short MIDI message on port 0. */

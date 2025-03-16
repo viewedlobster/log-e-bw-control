@@ -20,6 +20,8 @@
 
 package se.loge.bwcontrol.common;
 
+import java.util.function.Function;
+
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
@@ -44,4 +46,8 @@ public abstract class ExtensionStore {
   public abstract void registerMidiCallback(MidiIn midiIn, CallbackRegistry.MatchingCallback<ShortMidiMessage> cb);
   public abstract void registerSysexCallback(MidiIn midiIn, CallbackRegistry.MatchingCallback<String> cb);
 
+  public abstract void signalHardwareUpdate(int type);
+  public abstract boolean shouldHardwareUpdate();
+  public abstract void updateHardware();
+  public abstract void registerHardwareUpdateCallback(int type, Runnable f);
 }

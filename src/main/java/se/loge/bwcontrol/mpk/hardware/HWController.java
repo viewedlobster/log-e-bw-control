@@ -108,7 +108,10 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
 
    public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
       assert(midiOuts.length == MPK_NUM_MIDI_OUT - 1);
-      bankA.connectMidiOut(midiOut);
+      bankA.connectMidiOut(midiOut, midiOuts);
+      bankB.connectMidiOut(midiOut, midiOuts);
+      bankC.connectMidiOut(midiOut, midiOuts);
+      pads.connectMidiOut(midiOut, midiOuts);
    }
 
 }

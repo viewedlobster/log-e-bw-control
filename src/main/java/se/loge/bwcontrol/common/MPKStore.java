@@ -20,6 +20,8 @@
 
 package se.loge.bwcontrol.common;
 
+import java.util.function.Function;
+
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
@@ -29,6 +31,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Transport;
 
 import se.loge.bwcontrol.common.CallbackRegistry.MatchingCallback;
+import se.loge.bwcontrol.mpk.MPKConstants;
 
 public class MPKStore extends ExtensionStore {
   private ControllerHost host;
@@ -39,7 +42,9 @@ public class MPKStore extends ExtensionStore {
   private MidiIn midi0;
   private CallbackRegistry<ShortMidiMessage> midi0Callback;
   private CallbackRegistry<String> sysex0Callback;
-  
+  private boolean padOnUp, padOffUp;
+  private Runnable padOnUpCallback, padOffUpCallback;
+
   static final String MPK_PRIMARY_CURSOR_NAME = "Primary";
   static final String MPK_PRIMARY_INSTRUMENT_NAME = "Primary Instrument";
 
@@ -47,6 +52,7 @@ public class MPKStore extends ExtensionStore {
     midi0Callback = new CallbackRegistry<>();
     sysex0Callback = new CallbackRegistry<>();
     host = h;
+    padOnUp = padOffUp = false;
   }
 
   public static ExtensionStore initStore(ControllerHost host)
@@ -111,5 +117,57 @@ public class MPKStore extends ExtensionStore {
         "mpk_primary_instrument", MPK_PRIMARY_INSTRUMENT_NAME, 0, CursorDeviceFollowMode.FIRST_INSTRUMENT);
     }
     return primaryInstrumentCursor;
+  }
+
+  @Override
+  public void signalHardwareUpdate(int type) {
+    switch (type) {
+    case MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT:
+      padOnUp = true;
+      break;
+    case MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT:
+      padOffUp = true;
+      break;
+    default:
+      getHost().println(String.format("signalUpdateHardware: Update type %d unrecognized", type));
+      break;
+    }
+  }
+
+  @Override
+  public boolean shouldHardwareUpdate() {
+    return (padOnUp || padOffUp);
+  }
+
+  @Override
+  public void registerHardwareUpdateCallback(int type, Runnable f) {
+    switch (type) {
+    case MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT:
+      if (padOnUpCallback != null) {
+        getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
+      }
+      padOnUpCallback = f;
+      break;
+    case MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT:
+      if (padOffUpCallback != null) {
+        getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
+      }
+      padOffUpCallback = f;
+      break;
+    default:
+      throw new HWError(String.format("unrecognized hardware update type %d", type));
+    }
+  }
+
+  @Override
+  public void updateHardware() {
+    if (padOnUp) {
+      padOnUpCallback.run();
+      padOnUp = false;
+    }
+    if (padOffUp) {
+      padOffUpCallback.run();
+      padOffUp = false;
+    }
   }
 }
