@@ -94,7 +94,7 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
     b.add(SysexBuilder.msb(MPK_PAD_LIGHT_OFF_COLOR_MIN));
     b.add(SysexBuilder.lsb(MPK_PAD_LIGHT_OFF_COLOR_MIN));
     for (int i = 0; i < MPK_PAD_BANK_NAMES.length * MPK_PAD_BANK_SIZE; i++) {
-      b.add(getPad(i).offColorByte());
+      b.add(getPad(i).pressedColorByte());
     }
     b.add("F7");
 
@@ -114,7 +114,7 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
     b.add(SysexBuilder.msb(MPK_PAD_LIGHT_ON_COLOR_MIN));
     b.add(SysexBuilder.lsb(MPK_PAD_LIGHT_ON_COLOR_MIN));
     for (int i = 0; i < MPK_PAD_BANK_NAMES.length * MPK_PAD_BANK_SIZE; i++) {
-      b.add(getPad(i).onColorByte());
+      b.add(getPad(i).colorByte());
     }
     b.add("F7");
 
@@ -140,11 +140,11 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
     }
     midiRemoteOut = midiOuts[0];
 
-    registerHardwareUpdateCallback(MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT,
+    registerHardwareUpdateCallback(MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL,
       () -> {
         updateOnColors();
       });
-    registerHardwareUpdateCallback(MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT, 
+    registerHardwareUpdateCallback(MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL, 
       () -> {
         updateOffColors();
       });

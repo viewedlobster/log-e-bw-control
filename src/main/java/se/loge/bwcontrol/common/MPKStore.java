@@ -42,8 +42,8 @@ public class MPKStore extends ExtensionStore {
   private MidiIn midi0;
   private CallbackRegistry<ShortMidiMessage> midi0Callback;
   private CallbackRegistry<String> sysex0Callback;
-  private boolean padOnUp, padOffUp;
-  private Runnable padOnUpCallback, padOffUpCallback;
+  private boolean padColorUp, padPressedColorUp;
+  private Runnable padColorUpCallback, padPressedColorUpCallback;
 
   static final String MPK_PRIMARY_CURSOR_NAME = "Primary";
   static final String MPK_PRIMARY_INSTRUMENT_NAME = "Primary Instrument";
@@ -52,7 +52,7 @@ public class MPKStore extends ExtensionStore {
     midi0Callback = new CallbackRegistry<>();
     sysex0Callback = new CallbackRegistry<>();
     host = h;
-    padOnUp = padOffUp = false;
+    padColorUp = padPressedColorUp = false;
   }
 
   public static ExtensionStore initStore(ControllerHost host)
@@ -122,11 +122,11 @@ public class MPKStore extends ExtensionStore {
   @Override
   public void signalHardwareUpdate(int type) {
     switch (type) {
-    case MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT:
-      padOnUp = true;
+    case MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL:
+      padColorUp = true;
       break;
-    case MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT:
-      padOffUp = true;
+    case MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL:
+      padPressedColorUp = true;
       break;
     default:
       getHost().println(String.format("signalUpdateHardware: Update type %d unrecognized", type));
@@ -136,23 +136,23 @@ public class MPKStore extends ExtensionStore {
 
   @Override
   public boolean shouldHardwareUpdate() {
-    return (padOnUp || padOffUp);
+    return (padColorUp || padPressedColorUp);
   }
 
   @Override
   public void registerHardwareUpdateCallback(int type, Runnable f) {
     switch (type) {
-    case MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT:
-      if (padOnUpCallback != null) {
+    case MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL:
+      if (padColorUpCallback != null) {
         getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
       }
-      padOnUpCallback = f;
+      padColorUpCallback = f;
       break;
-    case MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT:
-      if (padOffUpCallback != null) {
+    case MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL:
+      if (padPressedColorUpCallback != null) {
         getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
       }
-      padOffUpCallback = f;
+      padPressedColorUpCallback = f;
       break;
     default:
       throw new HWError(String.format("unrecognized hardware update type %d", type));
@@ -161,13 +161,13 @@ public class MPKStore extends ExtensionStore {
 
   @Override
   public void updateHardware() {
-    if (padOnUp) {
-      padOnUpCallback.run();
-      padOnUp = false;
+    if (padColorUp) {
+      padColorUpCallback.run();
+      padColorUp = false;
     }
-    if (padOffUp) {
-      padOffUpCallback.run();
-      padOffUp = false;
+    if (padPressedColorUp) {
+      padPressedColorUpCallback.run();
+      padPressedColorUp = false;
     }
   }
 }

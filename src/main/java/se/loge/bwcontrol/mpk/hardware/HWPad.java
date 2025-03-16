@@ -22,8 +22,8 @@ public class HWPad implements HWIHasHost, HWISignalsHardwareUpdate, HWIMidiIn,  
   final HardwareButton pad;
   final MultiStateHardwareLight light;
   final HardwareSurface surface;
-  PadColor onColor;
-  PadColor offColor;
+  PadColor color;
+  PadColor pressedColor;
   MidiOut midiRemoteOut;
   int note;
 
@@ -33,13 +33,13 @@ public class HWPad implements HWIHasHost, HWISignalsHardwareUpdate, HWIMidiIn,  
     this.padIdx = padIdx;
     this.pad = surface.createHardwareButton(String.format("pad_%s_%d", bankId, padIdx));
     this.light = surface.createMultiStateHardwareLight(String.format("pad_led_%s_%d", bankId, padIdx));
-    this.onColor = PadColor.GREY;
-    this.offColor = PadColor.RED;
+    this.color = PadColor.GREY;
+    this.pressedColor = PadColor.RED;
     this.note = note;
 
     light.setColorToStateFunction((c) -> {
-      offColor = PadColor.match(c);
-      return new PadLightState(onColor, offColor);
+      pressedColor = PadColor.match(c);
+      return new PadLightState(color, pressedColor);
     });
   }
 
@@ -47,20 +47,20 @@ public class HWPad implements HWIHasHost, HWISignalsHardwareUpdate, HWIMidiIn,  
   //  return MPK_PAD_LIGHT_OFF_COLOR_MIN + padIdx;
   //}
 
-  public byte offColorByte() {
-    if (offColor == null) {
+  public byte pressedColorByte() {
+    if (pressedColor == null) {
       return PadColor.OFF.v();
     }
 
-    return offColor.v();
+    return pressedColor.v();
   }
 
-  public byte onColorByte() {
-    if (onColor == null) {
+  public byte colorByte() {
+    if (color == null) {
       return PadColor.OFF.v();
     }
 
-    return onColor.v();
+    return color.v();
   }
 
   @Override
@@ -77,8 +77,8 @@ public class HWPad implements HWIHasHost, HWISignalsHardwareUpdate, HWIMidiIn,  
   public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
     midiRemoteOut = midiOuts[0];
     light.onUpdateHardware(() -> {
-      signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_ALL_ON_LIGHT);
-      signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_ALL_OFF_LIGHT);
+      signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL);
+      signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL);
     });
   }
 
@@ -140,24 +140,24 @@ public class HWPad implements HWIHasHost, HWISignalsHardwareUpdate, HWIMidiIn,  
 
   private class PadLightState extends InternalHardwareLightState {
 
-    private PadColor onColor;
-    private PadColor offColor;
+    private PadColor color;
+    private PadColor pressedColor;
 
     PadLightState(PadColor initOn, PadColor initOff) {
-      onColor = initOn;
-      offColor = initOff;
+      color = initOn;
+      pressedColor = initOff;
     }
 
     @Override
     public HardwareLightVisualState getVisualState() {
-      return HardwareLightVisualState.createForColor(onColor.bColor());
+      return HardwareLightVisualState.createForColor(color.bColor());
     }
 
     @Override
     public boolean equals(Object o) {
       if (o instanceof PadLightState) {
         PadLightState st = (PadLightState)o;
-        return st.onColor == this.onColor && st.offColor == this.offColor;
+        return st.color == this.color && st.pressedColor == this.pressedColor;
       }
 
       return false;
