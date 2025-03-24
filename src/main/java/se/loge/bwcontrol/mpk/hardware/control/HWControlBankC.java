@@ -18,34 +18,53 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware;
+package se.loge.bwcontrol.mpk.hardware.control;
 
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class HWControlBankB extends HWControlBank {
-  static final String CONTROL_BANK_ID = "B";
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
+import se.loge.bwcontrol.mpk.hardware.pad.HWPads;
+import se.loge.bwcontrol.mpk.hardware.pad.HWPads.PadMode;
+import se.loge.bwcontrol.mpk.hardware.pad.HWPads.UsingPadMode;
+
+public class HWControlBankC extends HWControlBank implements HWIHasHost, HWPads.UsingPadMode {
+  static final String CONTROL_BANK_ID = "C";
 
   // TODO set correct values
   static final int CONTROL_BANK_MIDI_CHANNEL = 0;
-  static final int[] CONTROL_BANK_KNOB_CC = { 52, 53, 54, 55, 57, 58, 59, 60 };
-  static final int[] CONTROL_BANK_FADER_CC = { 61, 62, 63, 70, 71, 72, 73, 74 };
-  static final int[] CONTROL_BANK_SOLO_CC = { 75, 76, 77, 78, 79, 80, 81, 82 };
+  static final int[] CONTROL_BANK_KNOB_CC = { 83, 85, 86, 87, 88, 89, 90, 91 };
+  static final int[] CONTROL_BANK_FADER_CC = { 92, 93, 94, 95, 102, 103, 104, 105};
+  static final int[] CONTROL_BANK_SOLO_CC = { 106, 107, 108, 109, 110, 111, 112, 113 };
 
   static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
 
-  public HWControlBankB(HardwareSurface surface) {
+  private final HardwareActionBindable recModeEnable;
+  private final HardwareActionBindable recModeDisable;
+
+  private MidiOut midi0Out;
+
+  public HWControlBankC(HardwareSurface surface) {
     super(surface, CONTROL_BANK_ID);
+
+    recModeEnable = customAction(() -> { setPadMode(PadMode.MPK_PAD_CLIP_START_RECORD); });
+    recModeDisable = customAction(() -> { 
+      assert(getPadMode() == PadMode.MPK_PAD_CLIP_START_RECORD);
+      revertPadMode(PadMode.MPK_PAD_CLIP_START_RECORD);
+    });
   }
 
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    // TODO Auto-generated method stub
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
       S[i].pressedAction().setActionMatcher(
         midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
           CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
+      S[i].releasedAction().setActionMatcher(
+        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
+          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_RELEASED_VAL));
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -57,16 +76,15 @@ public class HWControlBankB extends HWControlBank {
 
   @Override
   public void bindCCActions() {
-    // TODO Auto-generated method stub
-    
+
+    // rec clip pad mode
+    S[7].pressedAction().addBinding(recModeEnable);
+    S[7].releasedAction().addBinding(recModeDisable);
   }
 
   @Override
   public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
-    // TODO Auto-generated method stub
-    
+    midi0Out = midiOut;
   }
-
-
 
 }

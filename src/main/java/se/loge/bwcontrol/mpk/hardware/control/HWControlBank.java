@@ -18,7 +18,7 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware;
+package se.loge.bwcontrol.mpk.hardware.control;
 
 import com.bitwig.extension.controller.api.HardwareButton;
 import com.bitwig.extension.controller.api.HardwareSlider;
@@ -33,6 +33,9 @@ public abstract class HWControlBank implements HWIMidiIn, HWIMidiOut, HWIControl
   public final int MPK261_NUM_CONTROL_STRIPS = 8;
   
   static int KNOB_ROTATION_VAL = 127;
+
+  static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
+  static final int CONTROL_BANK_SOLO_RELEASED_VAL = 0;
 
   final HardwareButton[] S;
   final RelativeHardwareKnob[] K;

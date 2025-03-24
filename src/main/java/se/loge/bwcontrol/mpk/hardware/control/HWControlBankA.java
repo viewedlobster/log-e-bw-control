@@ -18,7 +18,7 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware;
+package se.loge.bwcontrol.mpk.hardware.control;
 
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.HardwareSurface;
@@ -36,9 +36,6 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
   static final int[] CONTROL_BANK_KNOB_CC = { 3, 9, 14, 15, 16, 17, 20, 19 };
   static final int[] CONTROL_BANK_FADER_CC = { 18, 21, 22, 23, 24, 25, 26, 27, };
   static final int[] CONTROL_BANK_SOLO_CC = { 28, 29, 30, 31, 35, 41, 46, 47 };
-
-  static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
-  static final int CONTROL_BANK_SOLO_RELEASED_VAL = 0;
 
   static final int CONTROL_BANK_CC_STATUS_BYTE = 0xb0 + CONTROL_BANK_MIDI_CHANNEL;
 
@@ -139,6 +136,22 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     }
   }
 
+  /*
+   * This looks like a mess so here is a rundown:
+   * 
+   * controlsK/F are cursors into remote control pages tagged as such.
+   * We first bind knobs K[0-7] and faders F[0-7] to these cursor pages
+   * 
+   * S[0-6] are then bound to select what page is active, with S[7]
+   * bound to select what selection is active
+   * -- knobs: S[7] == released
+   * -- faders: S[7] == pressed
+   * 
+   * S[0-7] are all in toggle mode, which means we have to add a couple of
+   * additional callback actions just to keep the lights in sync with the
+   * controller extension state (which is why there is so many calls to
+   * syncLight).
+   */
   @Override
   public void bindCCActions() {
     RemoteControl r;
@@ -148,6 +161,8 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       r = controlsF.getParameter(i); r.setIndication(true); r.addBinding(F[i]);
     }
 
+    // bind to select page, but check that page count is enough,
+    // otherwise just make sure light is synched with internal state
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
       final int icopy = i;
       S[i].pressedAction().addBinding(customAction(
@@ -161,6 +176,7 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
       ));
     }
 
+    // released action just sync light with internal state
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
       final int icopy = i;
       S[i].releasedAction().addBinding(customAction(

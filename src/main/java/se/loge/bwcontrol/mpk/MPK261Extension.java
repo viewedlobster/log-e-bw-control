@@ -27,9 +27,7 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-import se.loge.bwcontrol.HostDebug;
 import se.loge.bwcontrol.common.CallbackRegistry;
-import se.loge.bwcontrol.common.MPKStore;
 import se.loge.bwcontrol.common.CallbackPair;
 import se.loge.bwcontrol.mpk.hardware.HWController;
 
@@ -52,7 +50,6 @@ public class MPK261Extension extends ControllerExtension
    {
       final ControllerHost host = getHost();
 
-      HostDebug.setHost(host);
       MPKStore.initStore(host);
 
       final HardwareSurface hwsurface = host.createHardwareSurface();
@@ -80,11 +77,11 @@ public class MPK261Extension extends ControllerExtension
       midiIn1.setSysexCallback((String data) -> onSysex1(data));
 
 
-      hwsurface.updateHardware();
+      // set initial state
+      hwController.initFinalize();
 
-
-
-      // playButton.pressedAction().port
+      // send update to hardware
+      MPKStore.getStore().updateHardware();
 
       host.showPopupNotification("MPK 261 Initialized");
    }

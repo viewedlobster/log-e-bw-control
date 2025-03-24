@@ -46,10 +46,15 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBank;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankA;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankB;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankC;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
+import se.loge.bwcontrol.mpk.hardware.pad.HWPads;
 
 public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIControlCC {
 
@@ -112,6 +117,10 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       bankB.connectMidiOut(midiOut, midiOuts);
       bankC.connectMidiOut(midiOut, midiOuts);
       pads.connectMidiOut(midiOut, midiOuts);
+   }
+
+   public void initFinalize() {
+      pads.initFinalize();
    }
 
 }

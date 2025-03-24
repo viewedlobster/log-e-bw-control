@@ -20,14 +20,14 @@
 
 package se.loge.bwcontrol.common;
 
-import java.util.function.Function;
-
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Transport;
+
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
 
 public abstract class ExtensionStore {
   protected static ExtensionStore store;
@@ -46,8 +46,9 @@ public abstract class ExtensionStore {
   public abstract void registerMidiCallback(MidiIn midiIn, CallbackRegistry.MatchingCallback<ShortMidiMessage> cb);
   public abstract void registerSysexCallback(MidiIn midiIn, CallbackRegistry.MatchingCallback<String> cb);
 
-  public abstract void signalHardwareUpdate(int type);
+  public abstract void signalHardwareUpdate(HWIHasOutputState elm);
   public abstract boolean shouldHardwareUpdate();
   public abstract void updateHardware();
-  public abstract void registerHardwareUpdateCallback(int type, Runnable f);
+  
+  public abstract Object extra();
 }

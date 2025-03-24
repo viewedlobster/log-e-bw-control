@@ -20,7 +20,17 @@
 
 package se.loge.bwcontrol.mpk;
 
-public abstract class MPKConstants {
+public class MPKConst {
   public static final int UPDATE_TYPE_PAD_COLOR_ALL = 1;
   public static final int UPDATE_TYPE_PAD_PRESSED_COLOR_ALL = 2;
+
+
+  /* Grabbed from Akai js controller script */
+  public static final int MPK261_PRODUCT_ID = 0x25;
+
+  /* Sysex stuff */
+  public static final int MPK_PAD_LIGHT_COLOR_MIN = 1404;
+  public static final int MPK_PAD_LIGHT_PRESSED_COLOR_MIN = 1468;
+
+
 }

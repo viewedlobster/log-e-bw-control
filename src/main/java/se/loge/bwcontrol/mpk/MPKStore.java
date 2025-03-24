@@ -18,9 +18,10 @@
  *
  */
 
-package se.loge.bwcontrol.common;
+package se.loge.bwcontrol.mpk;
 
-import java.util.function.Function;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -30,8 +31,12 @@ import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Transport;
 
+import se.loge.bwcontrol.common.CallbackPair;
+import se.loge.bwcontrol.common.CallbackRegistry;
+import se.loge.bwcontrol.common.ExtensionStore;
 import se.loge.bwcontrol.common.CallbackRegistry.MatchingCallback;
-import se.loge.bwcontrol.mpk.MPKConstants;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
+import se.loge.bwcontrol.mpk.state.MPKStateAccess;
 
 public class MPKStore extends ExtensionStore {
   private ControllerHost host;
@@ -42,17 +47,21 @@ public class MPKStore extends ExtensionStore {
   private MidiIn midi0;
   private CallbackRegistry<ShortMidiMessage> midi0Callback;
   private CallbackRegistry<String> sysex0Callback;
-  private boolean padColorUp, padPressedColorUp;
-  private Runnable padColorUpCallback, padPressedColorUpCallback;
+  private Queue<HWIHasOutputState> needsUpdate;
+  private MPKStateAccess extra;
 
   static final String MPK_PRIMARY_CURSOR_NAME = "Primary";
   static final String MPK_PRIMARY_INSTRUMENT_NAME = "Primary Instrument";
+  static final int MPK_PRIMARY_CURSOR_TRACK_NUM_SENDS = 0;
+  static final int MPK_PRIMARY_CURSOR_TRACK_NUM_SCENES = 8;
+  static final boolean MPK_PRIMARY_CURSOR_TRACK_FOLLOW = true;
 
   private MPKStore(ControllerHost h) {
-    midi0Callback = new CallbackRegistry<>();
-    sysex0Callback = new CallbackRegistry<>();
-    host = h;
-    padColorUp = padPressedColorUp = false;
+    this.midi0Callback = new CallbackRegistry<>();
+    this.sysex0Callback = new CallbackRegistry<>();
+    this.host = h;
+    this.needsUpdate = new LinkedList<>();
+    this.extra = new MPKStateAccess();
   }
 
   public static ExtensionStore initStore(ControllerHost host)
@@ -97,7 +106,11 @@ public class MPKStore extends ExtensionStore {
   @Override
   public CursorTrack getPrimaryTrackCursor() {
     if (primaryTrackCursor == null) {
-      primaryTrackCursor = host.createCursorTrack("mpk_primary_track", MPK_PRIMARY_CURSOR_NAME, 0, 0, true);
+      primaryTrackCursor = host.createCursorTrack(
+        "mpk_primary_track", MPK_PRIMARY_CURSOR_NAME,
+        MPK_PRIMARY_CURSOR_TRACK_NUM_SENDS,
+        MPK_PRIMARY_CURSOR_TRACK_NUM_SCENES, 
+        MPK_PRIMARY_CURSOR_TRACK_FOLLOW);
     }
     return primaryTrackCursor;
   }
@@ -120,54 +133,24 @@ public class MPKStore extends ExtensionStore {
   }
 
   @Override
-  public void signalHardwareUpdate(int type) {
-    switch (type) {
-    case MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL:
-      padColorUp = true;
-      break;
-    case MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL:
-      padPressedColorUp = true;
-      break;
-    default:
-      getHost().println(String.format("signalUpdateHardware: Update type %d unrecognized", type));
-      break;
-    }
+  public void signalHardwareUpdate(HWIHasOutputState elm) {
+    needsUpdate.add(elm);
   }
 
   @Override
   public boolean shouldHardwareUpdate() {
-    return (padColorUp || padPressedColorUp);
-  }
-
-  @Override
-  public void registerHardwareUpdateCallback(int type, Runnable f) {
-    switch (type) {
-    case MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL:
-      if (padColorUpCallback != null) {
-        getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
-      }
-      padColorUpCallback = f;
-      break;
-    case MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL:
-      if (padPressedColorUpCallback != null) {
-        getHost().println("warning: registerHardwareUpdateCallback: replacing pad update callback");
-      }
-      padPressedColorUpCallback = f;
-      break;
-    default:
-      throw new HWError(String.format("unrecognized hardware update type %d", type));
-    }
+    return (!needsUpdate.isEmpty());
   }
 
   @Override
   public void updateHardware() {
-    if (padColorUp) {
-      padColorUpCallback.run();
-      padColorUp = false;
+    while (!needsUpdate.isEmpty()) {
+      needsUpdate.poll().onHardwareUpdate();
     }
-    if (padPressedColorUp) {
-      padPressedColorUpCallback.run();
-      padPressedColorUp = false;
-    }
+  }
+
+  @Override
+  public Object extra() {
+    return this.extra;
   }
 }

@@ -61,4 +61,8 @@ public interface HWIHasHost {
     host().println(s);
   }
 
+  public default void errorln(String s) {
+    host().errorln(s);
+  }
+
 }
