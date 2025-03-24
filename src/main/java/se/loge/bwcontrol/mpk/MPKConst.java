@@ -18,18 +18,19 @@
  *
  */
 
-package se.loge.bwcontrol;
+package se.loge.bwcontrol.mpk;
 
-import com.bitwig.extension.controller.api.ControllerHost;
+public class MPKConst {
+  public static final int UPDATE_TYPE_PAD_COLOR_ALL = 1;
+  public static final int UPDATE_TYPE_PAD_PRESSED_COLOR_ALL = 2;
 
-public abstract class HostDebug {
-  static ControllerHost host;
 
-  public static void setHost(ControllerHost h) {
-    host = h;
-  }
+  /* MPK261 specifics */
+  public static final int MPK261_PRODUCT_ID = 0x25;
+  public static final int MPK261_NUM_CONTROL_STRIPS = 8;
 
-  public static void println(String s) {
-    host.println(s);
-  }
+  /* Sysex stuff */
+  public static final int MPK_PAD_LIGHT_COLOR_MIN = 1404;
+  public static final int MPK_PAD_LIGHT_PRESSED_COLOR_MIN = 1468;
+
 }

@@ -18,9 +18,13 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware.ifc;
+package se.loge.bwcontrol.common.ifc;
 
-public interface HWIControlCC {
-  public void bindCCActions();
+import se.loge.bwcontrol.common.BWHost;
 
+public interface HasOutputState {
+  public void onHardwareUpdate();
+  default public void signalHardwareUpdate() {
+    BWHost.signalHardwareUpdate(this);
+  }
 }

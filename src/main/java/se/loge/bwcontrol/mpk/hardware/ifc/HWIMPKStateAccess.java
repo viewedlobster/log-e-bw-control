@@ -18,14 +18,13 @@
  *
  */
 
-package se.loge.bwcontrol.common;
+package se.loge.bwcontrol.mpk.hardware.ifc;
 
-public class CallbackPair<T1, T2> {
-  public final T1 midi;
-  public final T2 sysex;
+import se.loge.bwcontrol.mpk.MPKHost;
+import se.loge.bwcontrol.mpk.state.MPKState;
 
-  public CallbackPair(T1 t1, T2 t2) {
-    midi = t1;
-    sysex = t2;
+public interface HWIMPKStateAccess {
+  public default MPKState state() {
+    return MPKHost.state();
   }
 }

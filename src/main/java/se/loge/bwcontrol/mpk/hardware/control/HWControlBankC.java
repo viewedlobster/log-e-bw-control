@@ -18,33 +18,43 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware;
+package se.loge.bwcontrol.mpk.hardware.control;
 
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-public class HWControlBankC extends HWControlBank {
+import se.loge.bwcontrol.mpk.MPKConst;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
+
+public class HWControlBankC extends HWControlBank implements HWIMPKStateAccess {
   static final String CONTROL_BANK_ID = "C";
 
-  // TODO set correct values
   static final int CONTROL_BANK_MIDI_CHANNEL = 0;
   static final int[] CONTROL_BANK_KNOB_CC = { 83, 85, 86, 87, 88, 89, 90, 91 };
   static final int[] CONTROL_BANK_FADER_CC = { 92, 93, 94, 95, 102, 103, 104, 105};
   static final int[] CONTROL_BANK_SOLO_CC = { 106, 107, 108, 109, 110, 111, 112, 113 };
 
-  static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
+  static final int CONTROL_BANK_CC_STATUS_BYTE = 0xb0 + CONTROL_BANK_MIDI_CHANNEL;
 
-  public HWControlBankC(HardwareSurface surface) {
-    super(surface, CONTROL_BANK_ID);
+  static final int LIGHT_ON = 127;
+  static final int LIGHT_OFF = 0;
+
+  // S(n) = Sn button
+  private static final int METRONOME_BUTTON = 1;
+  private static final int ARRANGER_OVERDUB_BUTTON = 6;
+  private static final int CLIP_OVERDUB_BUTTON = 7;
+  private static final int REC_MODE_BUTTON = 8;
+
+  public HWControlBankC() {
+    super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC,
+      CONTROL_BANK_FADER_CC, CONTROL_BANK_SOLO_CC);
   }
 
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      S[i].pressedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiIn(midiIn, midiIns);
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -55,15 +65,19 @@ public class HWControlBankC extends HWControlBank {
   }
 
   @Override
-  public void bindCCActions() {
-    // TODO Auto-generated method stub
-    
+  public void bindMidiIn() {
+    S(METRONOME_BUTTON).bindTo(state().bitwig().metronome());
+
+    S(ARRANGER_OVERDUB_BUTTON).bindTo(state().bitwig().arrangerOverdub());
+    S(CLIP_OVERDUB_BUTTON).bindTo(state().bitwig().clipOverdub());
+    S(REC_MODE_BUTTON).bindTo(state().padMode(), (mode) -> mode.rec(), PadEvt.CLIP_REC_BUTTON_ON, PadEvt.CLIP_REC_BUTTON_OFF);
   }
 
   @Override
-  public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
-    // TODO Auto-generated method stub
-    
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiOut(midiOut, midiOuts);
+    }
   }
 
 }

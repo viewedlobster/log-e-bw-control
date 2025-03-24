@@ -18,38 +18,38 @@
  *
  */
 
-package se.loge.bwcontrol.common;
+package se.loge.bwcontrol.mpk.state;
 
-import java.util.LinkedList;
-import java.util.List;
+import se.loge.bwcontrol.common.CStateField;
+import se.loge.bwcontrol.mpk.state.MPKCState.ControlPager;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadMode;
+import se.loge.bwcontrol.mpk.state.MPKCState.PagerEvt;
 
-public class CallbackRegistry<T> {
+public class MPKState {
+  private final MPKCState cstate;
+  private final MPKBWState bwstate;
 
-  public interface MatchingCallback<S> {
-    public boolean runAndMatch(S arg);
-  }
-  private final List<MatchingCallback<T>> callbacks;
+  public MPKState() {
+    cstate = new MPKCState();
+    bwstate = new MPKBWState();
 
-
-  public CallbackRegistry() {
-    callbacks = new LinkedList<>();
-  }
-
-  public Object register(MatchingCallback<T> callback) {
-    callbacks.add(callback);
-    return callback;
+    bwstate.connectMPKState(cstate);
   }
 
-  public boolean unregister(Object o) {
-    boolean removed = callbacks.remove(o);
-    return removed;
+  public void init() {
+    cstate.init();
   }
 
-  public boolean invoke(T arg) {
-    for (MatchingCallback<T> callback : callbacks) {
-      if (callback.runAndMatch(arg))
-        return true;
-    }
-    return false;
+  public CStateField<ControlPager, PagerEvt> instrumentPager() {
+    return cstate.instrumentPager;
+  }
+
+  public CStateField<PadMode, PadEvt> padMode() {
+    return cstate.padMode;
+  }
+
+  public MPKBWState bitwig() {
+    return bwstate;
   }
 }

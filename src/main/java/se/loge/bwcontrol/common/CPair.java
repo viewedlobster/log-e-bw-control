@@ -20,13 +20,21 @@
 
 package se.loge.bwcontrol.common;
 
-import com.bitwig.extension.controller.api.ControllerHost;
+public class CPair<T1, T2> {
+  public final T1 fst;
+  public final T2 snd;
 
-public interface Debug {
-  default ControllerHost host() {
-    return ExtensionStore.getStore().getHost();
+  private CPair(T1 t1, T2 t2) {
+    this.fst = t1;
+    this.snd = t2;
   }
-  default void println(String s) {
-    host().println(s);
+
+  public static <T1, T2>  CPair<T1, T2> p(T1 t1, T2 t2) {
+    return new CPair<>(t1, t2);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("(%s, %s)", fst, snd);
   }
 }

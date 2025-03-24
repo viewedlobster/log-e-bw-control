@@ -21,14 +21,14 @@
 package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.api.HardwareSlider;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.NoteInput;
 import com.bitwig.extension.controller.api.PianoKeyboard;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
 
-public class HWPianoKeys implements HWIMidiIn {
+public class HWPianoKeys implements HasBWHost, CMidiIn {
   final static int MPK261_NUM_KEYS      = 61;
   final static int MPK261_OCT           = 0;
   final static int MPK261_OCT_START_KEY = 36;
@@ -47,10 +47,10 @@ public class HWPianoKeys implements HWIMidiIn {
 
   HardwareSlider modWheel;
 
-  public HWPianoKeys(HardwareSurface hwsurface) {
-    keys = hwsurface.createPianoKeyboard("piano_keys", MPK261_NUM_KEYS,
+  public HWPianoKeys() {
+    keys = surface().createPianoKeyboard("piano_keys", MPK261_NUM_KEYS,
       MPK261_OCT, MPK261_OCT_START_KEY);
-    modWheel = hwsurface.createHardwareSlider("mod_wheel");
+    modWheel = surface().createHardwareSlider("mod_wheel");
   }
 
   public void connectMidiIn(MidiIn midiIn, MidiIn... rest) {
@@ -62,7 +62,8 @@ public class HWPianoKeys implements HWIMidiIn {
     in = midiIn;
   }
 
-  public void bindNoteInput() {
+  @Override
+  public void bindMidiIn() {
     noteIn = in.createNoteInput(MPK_NOTE_INPUT_ID,
       String.format("8%x????", MPK_KEYS_MIDI_CHANNEL), // note off
       String.format("9%x????", MPK_KEYS_MIDI_CHANNEL), // note on
@@ -75,5 +76,4 @@ public class HWPianoKeys implements HWIMidiIn {
       String.format("e%x????", MPK_KEYS_MIDI_CHANNEL)  // pitch bend
       );
   }
-
 }

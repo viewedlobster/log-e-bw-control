@@ -18,44 +18,23 @@
  *
  */
 
- // Some notes for future implementation?
-
-// registerMidiCallback(midi0In, (msg) -> onMidi0Action(msg));
-/* S1-S4 are bound to knob and fader remote controls page navigation */ 
-/*S[0].pressedAction().addBinding(controlsK.selectPreviousAction());
-S[1].pressedAction().addBinding(controlsK.selectNextAction());
-S[2].pressedAction().addBinding(controlsF.selectPreviousAction());
-S[3].pressedAction().addBinding(controlsF.selectNextAction());
-*/
-/* S5-S8 remain unbound */
-/* Ideas for use
- * - setting pad mode: 
- *   * play instrument
- *   * play clips current track,
- *   * rec clips current track, 
- *   * global queues/actions (i.e. bound manually)
- */
-// S[4].pressedAction().addBinding(null);
-// S[5].pressedAction().addBinding(null);
-// S[6].pressedAction().addBinding(null);
-// S[7].pressedAction().addBinding(null);
 package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiOut;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBank;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankA;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankB;
+import se.loge.bwcontrol.mpk.hardware.control.HWControlBankC;
+import se.loge.bwcontrol.mpk.hardware.pad.HWPads;
 
-public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIControlCC {
+public class HWController implements CMidiIn, CMidiOut {
 
    ControllerExtension ext;
-
-   private HardwareSurface hwsurface;
 
    private HWTransport transport;
    private HWDawControl dawControl;
@@ -66,17 +45,15 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
    static final int MPK_NUM_MIDI_IN             = 2;
    static final int MPK_NUM_MIDI_OUT            = 2;
 
-   public HWController(HardwareSurface surface) {
-      hwsurface = surface;
+   public HWController() {
+      transport = new HWTransport();
+      dawControl = new HWDawControl();
+      pianoKeys = new HWPianoKeys();
+      pads = new HWPads();
 
-      transport = new HWTransport(hwsurface);
-      dawControl = new HWDawControl(hwsurface);
-      pianoKeys = new HWPianoKeys(hwsurface);
-      pads = new HWPads(hwsurface);
-
-      bankA = new HWControlBankA(hwsurface);
-      bankB = new HWControlBankB(hwsurface);
-      bankC = new HWControlBankC(hwsurface);
+      bankA = new HWControlBankA();
+      bankB = new HWControlBankB();
+      bankC = new HWControlBankC();
    }
 
    public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
@@ -92,17 +69,14 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       }
    }
 
-   public void bindNoteInput() {
-      pianoKeys.bindNoteInput();
-      pads.bindNoteInput();
-   }
-
-   public void bindCCActions() {
-      transport.bindCCActions();
-      dawControl.bindCCActions();
+   public void bindMidiIn() {
+      transport.bindMidiIn();
+      dawControl.bindMidiIn();
+      pads.bindMidiIn();
+      pianoKeys.bindMidiIn();
 
       for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
-         bank.bindCCActions();
+         bank.bindMidiIn();
       }
    }
 
@@ -113,5 +87,4 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       bankC.connectMidiOut(midiOut, midiOuts);
       pads.connectMidiOut(midiOut, midiOuts);
    }
-
 }

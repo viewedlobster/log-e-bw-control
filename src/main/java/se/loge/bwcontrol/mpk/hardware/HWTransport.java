@@ -20,17 +20,15 @@
 
 package se.loge.bwcontrol.mpk.hardware;
 
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Transport;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
 
 import com.bitwig.extension.controller.api.HardwareButton;
 
-public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
+public class HWTransport implements HasBWHost, CMidiIn {
   final HardwareButton play;
   final HardwareButton stop;
   final HardwareButton rec;
@@ -47,12 +45,12 @@ public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
 
   public final int MIDI_TRANSPORT_VAL_ON_PRESS = 127;
 
-  public HWTransport(HardwareSurface hwsurface) {
-    rwd = hwsurface.createHardwareButton("transport_rwd");
-    ffwd = hwsurface.createHardwareButton("transport_ffwd");
-    stop = hwsurface.createHardwareButton("transport_stop");
-    play = hwsurface.createHardwareButton("transport_play");
-    rec = hwsurface.createHardwareButton("transport_rec");
+  public HWTransport() {
+    rwd = surface().createHardwareButton("transport_rwd");
+    ffwd = surface().createHardwareButton("transport_ffwd");
+    stop = surface().createHardwareButton("transport_stop");
+    play = surface().createHardwareButton("transport_play");
+    rec = surface().createHardwareButton("transport_rec");
   }
 
   public void connectMidiIn(MidiIn midiIn, MidiIn... rest) {
@@ -68,7 +66,7 @@ public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_REC, MIDI_TRANSPORT_VAL_ON_PRESS));
   }
 
-  public void bindCCActions() {
+  public void bindMidiIn() {
     Transport t = transport();
     rwd.pressedAction().addBinding(t.rewindAction());
     ffwd.pressedAction().addBinding(t.fastForwardAction());

@@ -18,9 +18,10 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware.ifc;
+package se.loge.bwcontrol.common.ifc;
 
-public interface HWINoteInput {
+import com.bitwig.extension.controller.api.MidiOut;
 
-  public void bindNoteInput();
+public interface CMidiOut {
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts);
 }

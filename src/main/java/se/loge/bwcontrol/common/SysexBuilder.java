@@ -29,19 +29,17 @@ public class SysexBuilder {
     data = new ArrayList<>();
   }
 
+  // convenience since everything is int
   public void add(int b) {
-    // TODO: reenable check?
-    //if  (0 > b || b > 0x7f) {
-      //throw new HWError(
-        //String.format("error: couldn't convert integer %x to 7 bit byte in sysex bilder", b));
-    //}
     data.add((byte)b);
   }
 
+  // add single byte
   public void add(byte b) {
     data.add(b);
   }
 
+  // add hex string encoded bytes. allows spaces
   public void add(String s) {
     int i = 0;
 
@@ -61,11 +59,13 @@ public class SysexBuilder {
     return bytes;
   }
 
-  public static int msb(int v) {
+  // 7 bit byte msb
+  public static int msb7(int v) {
     return ((v >> 7) & 0xff);
   }
 
-  public static int lsb(int v) {
+  // 7 bit byte lsb
+  public static int lsb7(int v) {
     return (v & 0x7f);
   }
 
