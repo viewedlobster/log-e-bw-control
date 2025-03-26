@@ -28,6 +28,7 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
 import se.loge.bwcontrol.common.CallbackRegistry;
+import se.loge.bwcontrol.common.ExtensionStore;
 import se.loge.bwcontrol.common.CallbackPair;
 import se.loge.bwcontrol.mpk.hardware.HWController;
 
@@ -67,8 +68,8 @@ public class MPK261Extension extends ControllerExtension
       hwController.connectMidiOut(midiOut0, midiOut1);
       host.println("Midi Out connected");
 
+      hwController.bindMidi();
       hwController.bindNoteInput();
-      hwController.bindCCActions();
 
       // bwTransport = host.createTransport();
       midiIn0.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
@@ -76,9 +77,8 @@ public class MPK261Extension extends ControllerExtension
       midiIn1.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi1(msg));
       midiIn1.setSysexCallback((String data) -> onSysex1(data));
 
-
-      // set initial state
-      hwController.initFinalize();
+      // initialize state
+      MPKStore.getStore().init();
 
       // send update to hardware
       MPKStore.getStore().updateHardware();

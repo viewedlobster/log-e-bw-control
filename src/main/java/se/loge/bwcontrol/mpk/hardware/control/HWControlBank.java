@@ -25,11 +25,11 @@ import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.RelativeHardwareKnob;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 
-public abstract class HWControlBank implements HWIMidiIn, HWIMidiOut, HWIControlCC {
+public abstract class HWControlBank implements HWIMidiIn, HWIMidiOut, HWIMidiBinding {
   public final int MPK261_NUM_CONTROL_STRIPS = 8;
   
   static int KNOB_ROTATION_VAL = 127;

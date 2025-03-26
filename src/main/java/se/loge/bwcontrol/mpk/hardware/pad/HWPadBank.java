@@ -30,10 +30,11 @@ import com.bitwig.extension.controller.api.MidiOut;
 import se.loge.bwcontrol.mpk.hardware.NoteRange;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 
-public class HWPadBank implements HWIMidiIn, HWIMidiOut, HWIHasHost, HWIHasOutputState {
+public class HWPadBank implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWIMidiBinding, HWIHasOutputState {
 
   final static int MPK261_NUM_PADS = 16;
   static final String[] MPK_PAD_BANK_NAMES = {
@@ -59,11 +60,12 @@ public class HWPadBank implements HWIMidiIn, HWIMidiOut, HWIHasHost, HWIHasOutpu
 
     // create drum pad bank and set it to correct index
     this.drumPads = primaryInstrument().createDrumPadBank(MPK261_NUM_PADS);
-    this.drumPads.scrollPosition().set(bankIdx * MPK261_NUM_PADS);
+    this.drumPads.scrollPosition().set(padIdxOffset);
     this.drumPads.exists().markInterested();
 
     for ( int i = 0; i < MPK261_NUM_PADS; i++ ) {
       ClipLauncherSlot clip = i < primaryClips.getSizeOfBank() ? primaryClips.getItemAt(i) : null;
+      println(Integer.toString(range.getNote(i)));
       pads[i] = new HWPad(hwsurface, padIdxOffset + i, id, range.getNote(i),
         drumPads.getItemAt(i), clip);
     }
@@ -124,6 +126,13 @@ public class HWPadBank implements HWIMidiIn, HWIMidiOut, HWIHasHost, HWIHasOutpu
   public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
     for (int i = 0; i < MPK261_NUM_PADS; i++) {
       pads[i].connectMidiOut(midiOut, midiOuts);
+    }
+  }
+
+  @Override
+  public void bindMidi() {
+    for (int pad = 0; pad < MPK261_NUM_PADS; pad++) {
+      pads[pad].bindMidi();
     }
   }
 }

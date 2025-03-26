@@ -20,7 +20,7 @@
 
 package se.loge.bwcontrol.mpk.hardware.ifc;
 
-public interface HWIControlCC {
-  public void bindCCActions();
+public interface HWIMidiBinding {
+  public void bindMidi();
 
 }

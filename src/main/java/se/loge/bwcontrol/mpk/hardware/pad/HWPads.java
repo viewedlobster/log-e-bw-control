@@ -21,33 +21,36 @@
 package se.loge.bwcontrol.mpk.hardware.pad;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
-import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareActionMatcher;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 
-import se.loge.bwcontrol.common.ExtensionStore;
+import se.loge.bwcontrol.common.CState;
 import se.loge.bwcontrol.common.SysexBuilder;
 import se.loge.bwcontrol.mpk.hardware.NoteRange;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
-import se.loge.bwcontrol.mpk.state.MPKStateAccess;
+import se.loge.bwcontrol.mpk.state.MPKState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKState.PadMode;
 import se.loge.bwcontrol.mpk.MPKConst;
 
-public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, HWIHasOutputState {
-  static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
+public class HWPads implements HWIHasHost, HWIMidiBinding, HWIMidiIn, HWIMidiOut, HWINoteInput, HWIHasOutputState, HWIMPKStateAccess {
+  public static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
   // TODO remove duplication between this and padbank class
-  static final int MPK_PAD_BANK_SIZE = 16;
-  static final int MPK_NUM_PAD_BANKS = 4;
+  public static final int MPK_PAD_BANK_SIZE = 16;
+  public static final int MPK_NUM_PAD_BANKS = 4;
 
-  static final int MPK_PADS_MIDI_CHANNEL = 9;
+  public static final int MPK_PADS_MIDI_CHANNEL = 9;
 
-  static final int MPK_NUM_MIDI_NOTES = 128;
+  public static final int MPK_NUM_MIDI_NOTES = 128;
+
+  public static final int MPK_PADS_NOTE_OFFSET = 36;
 
   private final Integer[] allNotesOff;
   private final Integer[] allNotesOn;
@@ -60,40 +63,12 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
   private MidiOut midiRemoteOut;
 
   private ClipLauncherSlotBank primaryClips;
-  private HardwareActionBindable[] recActions;
-  private HardwareActionMatcher[] noteOns;
 
-  public enum PadMode {
-    MPK_PAD_NOTES_PLAY,
-    MPK_PAD_CLIP_START_RECORD,
-    MPK_PAD_CLIP_TRIGGER,
-    MPK_PAD_NOPE;
-  }
-
-  public interface UsingPadMode {
-    public default PadMode getPadMode() {
-      MPKStateAccess s = (MPKStateAccess)ExtensionStore.getStore().extra();
-      return s.getPadMode();
-    }
-
-    public default void setPadMode(PadMode m) {
-      MPKStateAccess s = (MPKStateAccess)ExtensionStore.getStore().extra();
-      s.setPadMode(m);
-    }
-
-    public default void revertPadMode(PadMode m) {
-      MPKStateAccess s = (MPKStateAccess)ExtensionStore.getStore().extra();
-      s.revertPadMode(m);
-    }
-  }
-
-  private PadMode mode;
-  private PadMode prevMode;
-
+  CState<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
 
   public HWPads(HardwareSurface hwsurface) {
     // for global access to mode
-    ((MPKStateAccess)ExtensionStore.getStore().extra()).setHWPads(this);
+    padMode = controllerState().padModeUser((mode) -> this.onPadModeUpdate(mode));
 
     // set constants for mode switching
     allNotesOff = new Integer[MPK_NUM_MIDI_NOTES];
@@ -102,9 +77,6 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
       allNotesOff[i] = -1;
       allNotesOn[i] = i;
     }
-
-    // init mode
-    mode = PadMode.MPK_PAD_NOPE;
 
     // primary track clips shared between pad banks
     primaryClips = primaryTrack().clipLauncherSlotBank();
@@ -115,7 +87,8 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
       padBanks[bankIdx] =
         new HWPadBank(hwsurface,
           bankIdx,
-          new NoteRange(bankIdx*MPK_PAD_BANK_SIZE, MPK_PAD_BANK_SIZE),
+          new NoteRange(MPK_PADS_NOTE_OFFSET + bankIdx*MPK_PAD_BANK_SIZE,
+                        MPK_PAD_BANK_SIZE),
           MPK_PAD_BANK_SIZE * bankIdx, primaryClips);
     }
 
@@ -124,36 +97,31 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
     );
   }
 
-  public void setMode(PadMode mode) {
-    if (mode != this.mode) {
-      modeRemap(this.mode, mode);
-      this.prevMode = this.mode;
-      this.mode = mode;
-      updateLeds();
-    }
+  private void onPadModeUpdate(PadMode mode) {
+    modeRemap(mode);
+    updateLeds(mode);
   }
 
-  public PadMode getMode() {
-    return this.mode;
+  private void updateLeds(PadMode mode) {
+    switch (mode.rec) {
+    case RECMODE_ON:
+      ledClipRecordMode(true);
+      break;
+    case RECMODE_OFF:
+      switch (mode.play) {
+      case NOTE_PLAY:
+        ledPlayMode(true);
+        break;
+      case CLIP_PLAY:
+        errorln("Clip play mode not implemented yet, you shouldn't see this message.");
+        break;
+      }
+      break;
+    }
   }
 
   private void updateLeds() {
-    switch (this.mode) {
-      case MPK_PAD_NOTES_PLAY:
-        ledPlayMode(true);
-        break;
-      case MPK_PAD_CLIP_START_RECORD:
-        ledClipRecordMode(true);
-        break;
-      case MPK_PAD_CLIP_TRIGGER:
-        // TODO
-        break;
-      case MPK_PAD_NOPE:
-        // TODO
-        break;
-      default:
-        println("unrecognized mode: " + this.mode.toString());
-    }
+    updateLeds(padMode.get());
   }
 
   private void ledPlayMode(boolean signal) {
@@ -174,43 +142,28 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
     }
   }
 
-  private void modeRemap(PadMode ol, PadMode nw) {
-    // note input unmapping/consume
-    switch (ol) {
-      case MPK_PAD_NOTES_PLAY:
-        noteIn.setKeyTranslationTable(allNotesOff);
-      case MPK_PAD_CLIP_START_RECORD:
-      case MPK_PAD_CLIP_TRIGGER:
-        noteIn.setShouldConsumeEvents(true);
-        break;
-      case MPK_PAD_NOPE:
-        break;
-      default:
-        println("Unrecognized mode: " + mode.toString());
-    }
-
-    for (int bank = 0; bank < MPK_NUM_PAD_BANKS; bank++) {
-      for (int pad = 0; pad < MPK_PAD_BANK_SIZE; pad++) {
-        padBanks[bank].pads[pad].modeRemap(ol, nw);
-      }
-    }
-
-    // note input mapping/unconsume
-    switch (nw) {
-    case MPK_PAD_NOTES_PLAY:
-      noteIn.setKeyTranslationTable(allNotesOn);
-      break;
-    case MPK_PAD_CLIP_START_RECORD:
-    case MPK_PAD_CLIP_TRIGGER:
+  private void modeRemap(PadMode mode) {
+    // note input on/off
+    // actions are mapped in pad class
+    println("remapping pad mode");
+    switch (mode.rec) {
+    case RECMODE_ON:
+      noteIn.setKeyTranslationTable(allNotesOff);
       noteIn.setShouldConsumeEvents(false);
       break;
-    case MPK_PAD_NOPE:
+    case RECMODE_OFF:
+      switch (mode.play) {
+        case NOTE_PLAY:
+          noteIn.setKeyTranslationTable(allNotesOn);
+          noteIn.setShouldConsumeEvents(true);
+          break;
+        case CLIP_PLAY:
+          noteIn.setKeyTranslationTable(allNotesOff);
+          noteIn.setShouldConsumeEvents(false);
+          break;
+      }
       break;
     }
-  }
-
-  public void revertMode() {
-    setMode(this.prevMode);
   }
 
   public HWPad getPad(int bankIdx, int bankOffset) {
@@ -285,7 +238,14 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
       String.format("a%x????", MPK_PADS_MIDI_CHANNEL), // poly aftertouch
       String.format("d%x????", MPK_PADS_MIDI_CHANNEL) // mono aftertouch
       );
-    noteIn.setKeyTranslationTable(allNotesOff);
+    // noteIn.setKeyTranslationTable(allNotesOff);
+  }
+
+  @Override
+  public void bindMidi() {
+    for (int i = 0; i < MPK_NUM_PAD_BANKS; i++) {
+      padBanks[i].bindMidi();
+    }
   }
 
   @Override
@@ -294,9 +254,5 @@ public class HWPads implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWINoteInput, 
       padBanks[i].connectMidiOut(midiOut, midiOuts);
     }
     midiRemoteOut = midiOuts[0];
-  }
-
-  public void initFinalize() {
-    setMode(PadMode.MPK_PAD_NOTES_PLAY);
   }
 }

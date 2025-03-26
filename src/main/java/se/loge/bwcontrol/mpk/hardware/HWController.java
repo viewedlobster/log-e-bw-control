@@ -50,13 +50,13 @@ import se.loge.bwcontrol.mpk.hardware.control.HWControlBank;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankA;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankB;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankC;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
 import se.loge.bwcontrol.mpk.hardware.pad.HWPads;
 
-public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIControlCC {
+public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIMidiBinding {
 
    ControllerExtension ext;
 
@@ -102,12 +102,13 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       pads.bindNoteInput();
    }
 
-   public void bindCCActions() {
-      transport.bindCCActions();
-      dawControl.bindCCActions();
+   public void bindMidi() {
+      transport.bindMidi();
+      dawControl.bindMidi();
+      pads.bindMidi();
 
       for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
-         bank.bindCCActions();
+         bank.bindMidi();
       }
    }
 
@@ -118,9 +119,4 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWICon
       bankC.connectMidiOut(midiOut, midiOuts);
       pads.connectMidiOut(midiOut, midiOuts);
    }
-
-   public void initFinalize() {
-      pads.initFinalize();
-   }
-
 }

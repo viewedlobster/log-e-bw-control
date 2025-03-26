@@ -153,7 +153,7 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
    * syncLight).
    */
   @Override
-  public void bindCCActions() {
+  public void bindMidi() {
     RemoteControl r;
     for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
       /* K1-K8 and F1-F8 are bound to remote controls page */

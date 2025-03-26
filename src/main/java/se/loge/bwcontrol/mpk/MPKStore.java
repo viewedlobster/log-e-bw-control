@@ -36,7 +36,7 @@ import se.loge.bwcontrol.common.CallbackRegistry;
 import se.loge.bwcontrol.common.ExtensionStore;
 import se.loge.bwcontrol.common.CallbackRegistry.MatchingCallback;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
-import se.loge.bwcontrol.mpk.state.MPKStateAccess;
+import se.loge.bwcontrol.mpk.state.MPKState;
 
 public class MPKStore extends ExtensionStore {
   private ControllerHost host;
@@ -48,7 +48,7 @@ public class MPKStore extends ExtensionStore {
   private CallbackRegistry<ShortMidiMessage> midi0Callback;
   private CallbackRegistry<String> sysex0Callback;
   private Queue<HWIHasOutputState> needsUpdate;
-  private MPKStateAccess extra;
+  private MPKState extra;
 
   static final String MPK_PRIMARY_CURSOR_NAME = "Primary";
   static final String MPK_PRIMARY_INSTRUMENT_NAME = "Primary Instrument";
@@ -61,7 +61,7 @@ public class MPKStore extends ExtensionStore {
     this.sysex0Callback = new CallbackRegistry<>();
     this.host = h;
     this.needsUpdate = new LinkedList<>();
-    this.extra = new MPKStateAccess();
+    this.extra = new MPKState();
   }
 
   public static ExtensionStore initStore(ControllerHost host)
@@ -147,6 +147,11 @@ public class MPKStore extends ExtensionStore {
     while (!needsUpdate.isEmpty()) {
       needsUpdate.poll().onHardwareUpdate();
     }
+  }
+
+  @Override
+  public void init() {
+    this.extra.init();
   }
 
   @Override

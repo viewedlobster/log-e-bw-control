@@ -49,6 +49,8 @@ public abstract class ExtensionStore {
   public abstract void signalHardwareUpdate(HWIHasOutputState elm);
   public abstract boolean shouldHardwareUpdate();
   public abstract void updateHardware();
+
+  public abstract void init();
   
   public abstract Object extra();
 }

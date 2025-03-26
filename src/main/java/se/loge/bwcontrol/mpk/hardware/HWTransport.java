@@ -24,13 +24,13 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.Transport;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIControlCC;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 
 import com.bitwig.extension.controller.api.HardwareButton;
 
-public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
+public class HWTransport implements HWIMidiIn, HWIHasHost, HWIMidiBinding {
   final HardwareButton play;
   final HardwareButton stop;
   final HardwareButton rec;
@@ -68,7 +68,7 @@ public class HWTransport implements HWIMidiIn, HWIHasHost, HWIControlCC {
       MIDI_TRANSPORT_CHANNEL, MIDI_TRANSPORT_CC_REC, MIDI_TRANSPORT_VAL_ON_PRESS));
   }
 
-  public void bindCCActions() {
+  public void bindMidi() {
     Transport t = transport();
     rwd.pressedAction().addBinding(t.rewindAction());
     ffwd.pressedAction().addBinding(t.fastForwardAction());

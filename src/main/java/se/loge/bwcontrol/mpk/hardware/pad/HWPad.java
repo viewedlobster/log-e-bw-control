@@ -31,16 +31,23 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
+import se.loge.bwcontrol.common.CState;
 import se.loge.bwcontrol.common.SysexBuilder;
 import se.loge.bwcontrol.mpk.MPKConst;
-import se.loge.bwcontrol.mpk.hardware.pad.HWPads.PadMode;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
+import se.loge.bwcontrol.mpk.state.MPKState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKState.PadMode;
 
-public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidiOut, HWPads.UsingPadMode {
-  final static int MPK_PADS_MIDI_CHANNEL = 0;
+public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWIMidiIn,  HWIMidiOut, HWIMPKStateAccess {
+
+  static final PadColor REC_OCCUPIED_COLOR = PadColor.RED;
+  static final PadColor REC_EMPTY_COLOR = PadColor.GREY;
+  static final PadColor REC_NOPE_COLOR = PadColor.OFF;
 
   final int padIdx;
   final HardwareButton pad;
@@ -53,11 +60,8 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
   HardwareActionBinding binding;
   DrumPad drumPad;
   private ClipLauncherSlot primaryClip;
-  private HardwareActionBindable recAction;
-
-  static final PadColor REC_OCCUPIED_COLOR = PadColor.RED;
-  static final PadColor REC_EMPTY_COLOR = PadColor.GREY;
-  static final PadColor REC_NOPE_COLOR = PadColor.OFF;
+  private HardwareActionBindable pressedAction;
+  private CState<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
 
   public HWPad(HardwareSurface surface, int padIdx, String bankId,
                int note, DrumPad pad, ClipLauncherSlot primaryClip) {
@@ -73,20 +77,20 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
     this.drumPad = pad;
     this.primaryClip = primaryClip;
 
+    this.padMode = controllerState().padModeUser((mode) -> this.onPadModeUpdate(mode));
+
     // recAction depends on primary clip slot existing
-    if (this.primaryClip != null) {
-      this.recAction = customAction(
-        () -> {
-          assert(getPadMode() == PadMode.MPK_PAD_CLIP_START_RECORD);
-          if (primaryClip.exists().get()) {
-            primaryClip.record();
-            revertPadMode(PadMode.MPK_PAD_CLIP_START_RECORD);
-          }
+    this.pressedAction = customAction(
+      () -> {
+        println("trying to start record");
+        if ( this.primaryClip != null ) {
+          println("starting record");
+          padMode.send(PadEvt.CLIP_REC_PAD_PRESSED);
+          this.primaryClip.record();
         }
-      );
-    } else {
-      this.recAction = null;
-    }
+      },
+      "pressed pad " + note + "action"
+    );
     // TODO can recAction be replaced by two actions?
 
     //light.setColorToStateFunction((c) -> {
@@ -98,10 +102,10 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
     setColor(primaryTrack().color().get(), false);
 
     drumPad.color().addValueObserver(
-      (r, g, b) -> { updateColorFromDrumPad(); }
+      (r, g, b) -> { updateColorFromDrumPad(true); }
     );
     drumPad.exists().addValueObserver(
-      (exsts) -> { updateColorFromDrumPad(); }
+      (exsts) -> { updateColorFromDrumPad(true); }
     );
     //drumPad.exists().addValueObserver(
     //  (exsts) -> {
@@ -113,55 +117,30 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
       primaryClip.exists().markInterested();
       primaryClip.hasContent().markInterested();
       primaryClip.exists().addValueObserver(
-        (exsts) -> updateColorFromPrimaryClip()
+        (exsts) -> updateColorFromPrimaryClip(true)
       );
       primaryClip.hasContent().addValueObserver(
-        (hasCont) -> updateColorFromPrimaryClip()
+        (hasCont) -> updateColorFromPrimaryClip(true)
       );
     }
   }
 
-  public void modeRemap(PadMode ol, PadMode nw) {
-    if (ol != nw) {
-
-      switch (nw) {
-      case MPK_PAD_NOTES_PLAY:
-        setPressedBinding(null);
-        break;
-      case MPK_PAD_CLIP_START_RECORD:
-        setPressedBinding(recAction);
-        break;
-      case MPK_PAD_CLIP_TRIGGER:
-        break;
-      case MPK_PAD_NOPE:
-        break;
-      default:
-      }
-    }
+  private void onPadModeUpdate(PadMode mode) {
+    updateColorFromPrimaryClip(false);
   }
 
-  private void updateColorFromPrimaryClip() {
-    switch (getPadMode()) {
-    case MPK_PAD_CLIP_START_RECORD:
-      if (! primaryClip.exists().get()) {
-        setColor(PadColor.OFF);
-        break;
-      }
-      setColor(primaryClip.hasContent().get() ? PadColor.RED : PadColor.GREY);
+  private void updateColorFromPrimaryClip(boolean signal) {
+    switch (padMode.get().rec) {
+    case RECMODE_ON:
+      ledClipRecordMode(signal);
       break;
-      default:
+    default:
     }
   }
 
-  private void updateColorFromDrumPad() {
-    switch (getPadMode()) {
-    case MPK_PAD_NOTES_PLAY:
-      if (! drumPad.exists().get()) {
-        setColor(primaryTrack().color().get());
-        break;
-      }
-      setColor(drumPad.color().get());
-      default:
+  private void updateColorFromDrumPad(boolean signal) {
+    if ( padMode.get().equals(PadMode.NOTE_PLAY) ) {
+      ledPlayModeDrumPad(signal);
     }
   }
 
@@ -235,7 +214,7 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
   }
 
   public void ledClipRecordMode(boolean signal) {
-    if (primaryClip != null && primaryClip.exists().get()) {
+    if ( primaryClip != null && primaryClip.exists().get() ) {
       setColor(
         primaryClip.hasContent().get() ? REC_OCCUPIED_COLOR : REC_EMPTY_COLOR,
         signal
@@ -262,7 +241,7 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
     midiRemoteOut.sendSysex(sysex.build());
   }
 
-  void setPressedBinding(HardwareActionBindable act) {
+  private void setPressedBinding(HardwareActionBindable act) {
     if (binding != null) {
       binding.removeBinding();
     }
@@ -274,12 +253,18 @@ public class HWPad implements HWIHasHost, HWIHasOutputState, HWIMidiIn,  HWIMidi
   }
 
   @Override
+  public void bindMidi() {
+    //this.pressedAction.addBinding(pad.pressedAction());
+    pad.pressedAction().addBinding(this.pressedAction);
+  }
+
+  @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
     pad.pressedAction().setActionMatcher(
-      midiIn.createNoteOnActionMatcher(MPK_PADS_MIDI_CHANNEL,
+      midiIn.createNoteOnActionMatcher(HWPads.MPK_PADS_MIDI_CHANNEL,
         note));
     pad.releasedAction().setActionMatcher(
-      midiIn.createNoteOffActionMatcher(MPK_PADS_MIDI_CHANNEL,
+      midiIn.createNoteOffActionMatcher(HWPads.MPK_PADS_MIDI_CHANNEL,
         note));
   }
 

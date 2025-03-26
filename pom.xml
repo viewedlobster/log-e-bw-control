@@ -5,7 +5,7 @@
 	<groupId>se.loge.bwcontrol.mpk</groupId>
 	<artifactId>mpk-261</artifactId>
 	<packaging>jar</packaging>
-	<name>MPK 261</name>
+	<name>log-e-bw-control</name>
 	<version>0.1</version>
 	
 	<repositories>

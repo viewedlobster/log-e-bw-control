@@ -58,7 +58,7 @@ public class HWControlBankB extends HWControlBank {
   }
 
   @Override
-  public void bindCCActions() {
+  public void bindMidi() {
     // TODO Auto-generated method stub
     
   }

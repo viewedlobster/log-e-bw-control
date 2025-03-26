@@ -74,6 +74,7 @@ public class HWPianoKeys implements HWIMidiIn {
       String.format("d%x????", MPK_KEYS_MIDI_CHANNEL), // mono aftertouch
       String.format("e%x????", MPK_KEYS_MIDI_CHANNEL)  // pitch bend
       );
+    noteIn.setShouldConsumeEvents(false);
   }
 
 }
