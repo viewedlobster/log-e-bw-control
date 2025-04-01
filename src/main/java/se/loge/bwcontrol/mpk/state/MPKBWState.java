@@ -19,7 +19,7 @@ public class MPKBWState implements HasBWHost {
 
   private CStateField<ControlPager, PagerEvt>.CStateConn<ControlPager, PagerEvt> pager;
 
-  public MPKBWState() {
+  MPKBWState() {
     controlBankARemoteKnobs = primaryInstrument().createCursorRemoteControlsPage(
       "MPK Bank A Knobs", MPKConst.MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-knobs");
     controlBankARemoteKnobs.selectedPageIndex().markInterested();
@@ -55,11 +55,17 @@ public class MPKBWState implements HasBWHost {
     return transport().isClipLauncherOverdubEnabled();
   }
 
-
-  // TODO encapsulate in mpkstate: controllerstate, hoststate
-
   void connectMPKState(MPKCState s) {
-    pager = s.instrumentPagerUser((p) -> onPagerUpdate(p));
+    // connect to pager
+    pager = s.instrumentPager.connect((p) -> onPagerUpdate(p));
+
+    // update pager page count when necessary
+    controlBankARemoteKnobs.pageCount().addValueObserver((v) -> {
+      pager.send(PagerEvt.bwPageCount(v, controlBankARemoteFaders.pageCount().get()));
+    });
+    controlBankARemoteFaders.pageCount().addValueObserver((v) -> {
+      pager.send(PagerEvt.bwPageCount(controlBankARemoteKnobs.pageCount().get(), v));
+    });
   }
 
   private void onPagerUpdate(ControlPager pagerUpd) {
