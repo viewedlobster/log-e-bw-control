@@ -24,6 +24,8 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
+import se.loge.bwcontrol.mpk.MPKConst;
+
 public class HWControlBankB extends HWControlBank {
   static final String CONTROL_BANK_ID = "B";
 
@@ -35,19 +37,15 @@ public class HWControlBankB extends HWControlBank {
 
   static final int CONTROL_BANK_SOLO_PRESSED_VAL = 127;
 
-  public HWControlBankB(HardwareSurface surface) {
-    super(surface, CONTROL_BANK_ID);
+  public HWControlBankB() {
+    super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC,
+      CONTROL_BANK_FADER_CC, CONTROL_BANK_SOLO_CC);
   }
 
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      S[i].pressedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
-      S[i].releasedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_RELEASED_VAL));
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiIn(midiIn, midiIns);
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -58,15 +56,16 @@ public class HWControlBankB extends HWControlBank {
   }
 
   @Override
-  public void bindMidi() {
+  public void bindMidiIn() {
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
-    // TODO Auto-generated method stub
-    
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiOut(midiOut, midiOuts);
+    }
   }
 
 

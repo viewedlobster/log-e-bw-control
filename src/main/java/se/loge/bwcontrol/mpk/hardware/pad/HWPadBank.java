@@ -27,14 +27,13 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
+import se.loge.bwcontrol.common.ifc.HasOutputState;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiOut;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
 import se.loge.bwcontrol.mpk.hardware.NoteRange;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
 
-public class HWPadBank implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWIMidiBinding, HWIHasOutputState {
+public class HWPadBank implements HasBWHost, CMidiIn, CMidiOut, HasOutputState {
 
   final static int MPK261_NUM_PADS = 16;
   static final String[] MPK_PAD_BANK_NAMES = {
@@ -51,8 +50,8 @@ public class HWPadBank implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWIMidiBind
   private final DrumPadBank drumPads;
   private final ClipLauncherSlotBank primaryClips;
 
-  public HWPadBank(HardwareSurface hwsurface, int bankIdx, NoteRange r,
-    int padIdxOffset, ClipLauncherSlotBank clips) {
+  public HWPadBank(int bankIdx, NoteRange r, int padIdxOffset,
+      ClipLauncherSlotBank clips) {
     this.id = MPK_PAD_BANK_NAMES[bankIdx];
     this.pads = new HWPad[MPK261_NUM_PADS];
     this.range = r;
@@ -66,7 +65,7 @@ public class HWPadBank implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWIMidiBind
     for ( int i = 0; i < MPK261_NUM_PADS; i++ ) {
       ClipLauncherSlot clip = i < primaryClips.getSizeOfBank() ? primaryClips.getItemAt(i) : null;
       println(Integer.toString(range.getNote(i)));
-      pads[i] = new HWPad(hwsurface, padIdxOffset + i, id, range.getNote(i),
+      pads[i] = new HWPad(padIdxOffset + i, id, range.getNote(i),
         drumPads.getItemAt(i), clip);
     }
 
@@ -130,9 +129,9 @@ public class HWPadBank implements HWIHasHost, HWIMidiIn, HWIMidiOut, HWIMidiBind
   }
 
   @Override
-  public void bindMidi() {
+  public void bindMidiIn() {
     for (int pad = 0; pad < MPK261_NUM_PADS; pad++) {
-      pads[pad].bindMidi();
+      pads[pad].bindMidiIn();
     }
   }
 }

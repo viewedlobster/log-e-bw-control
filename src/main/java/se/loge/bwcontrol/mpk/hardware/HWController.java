@@ -46,21 +46,17 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiOut;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBank;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankA;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankB;
 import se.loge.bwcontrol.mpk.hardware.control.HWControlBankC;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
 import se.loge.bwcontrol.mpk.hardware.pad.HWPads;
 
-public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIMidiBinding {
+public class HWController implements CMidiIn, CMidiOut {
 
    ControllerExtension ext;
-
-   private HardwareSurface hwsurface;
 
    private HWTransport transport;
    private HWDawControl dawControl;
@@ -71,17 +67,15 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIMid
    static final int MPK_NUM_MIDI_IN             = 2;
    static final int MPK_NUM_MIDI_OUT            = 2;
 
-   public HWController(HardwareSurface surface) {
-      hwsurface = surface;
+   public HWController() {
+      transport = new HWTransport();
+      dawControl = new HWDawControl();
+      pianoKeys = new HWPianoKeys();
+      pads = new HWPads();
 
-      transport = new HWTransport(hwsurface);
-      dawControl = new HWDawControl(hwsurface);
-      pianoKeys = new HWPianoKeys(hwsurface);
-      pads = new HWPads(hwsurface);
-
-      bankA = new HWControlBankA(hwsurface);
-      bankB = new HWControlBankB(hwsurface);
-      bankC = new HWControlBankC(hwsurface);
+      bankA = new HWControlBankA();
+      bankB = new HWControlBankB();
+      bankC = new HWControlBankC();
    }
 
    public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
@@ -97,18 +91,13 @@ public class HWController implements HWIMidiIn, HWIMidiOut, HWINoteInput, HWIMid
       }
    }
 
-   public void bindNoteInput() {
-      pianoKeys.bindNoteInput();
-      pads.bindNoteInput();
-   }
-
-   public void bindMidi() {
-      transport.bindMidi();
-      dawControl.bindMidi();
-      pads.bindMidi();
+   public void bindMidiIn() {
+      transport.bindMidiIn();
+      dawControl.bindMidiIn();
+      pads.bindMidiIn();
 
       for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
-         bank.bindMidi();
+         bank.bindMidiIn();
       }
    }
 

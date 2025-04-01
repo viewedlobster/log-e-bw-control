@@ -25,14 +25,16 @@ import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-import se.loge.bwcontrol.common.CState;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
+import se.loge.bwcontrol.common.CStateField;
+import se.loge.bwcontrol.common.ifc.HasOutputState;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
+import se.loge.bwcontrol.mpk.MPKConst;
+import se.loge.bwcontrol.mpk.hardware.button.HWCCToggleButton.ButtonState;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
-import se.loge.bwcontrol.mpk.state.MPKState.PadEvt;
-import se.loge.bwcontrol.mpk.state.MPKState.PadMode;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadMode;
 
-public class HWControlBankC extends HWControlBank implements HWIHasHost, HWIMPKStateAccess, HWIHasOutputState {
+public class HWControlBankC extends HWControlBank implements HasBWHost, HWIMPKStateAccess {
   static final String CONTROL_BANK_ID = "C";
 
   static final int CONTROL_BANK_MIDI_CHANNEL = 0;
@@ -45,71 +47,27 @@ public class HWControlBankC extends HWControlBank implements HWIHasHost, HWIMPKS
   static final int LIGHT_ON = 127;
   static final int LIGHT_OFF = 0;
 
-  private static final int REC_MODE_LIGHT = 7;
+  private static final int REC_MODE_BUTTON = 8;
+  private static final int CLIP_OVERDUB_BUTTON = 7;
 
-  private final HardwareActionBindable recModeEnable;
-  private final HardwareActionBindable recModeDisable;
+  private CStateField<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
 
-  private MidiOut midi0Out;
-  private int[] lights;
-  private CState<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
+  public HWControlBankC() {
+    super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC,
+      CONTROL_BANK_FADER_CC, CONTROL_BANK_SOLO_CC);
 
-  public HWControlBankC(HardwareSurface surface) {
-    super(surface, CONTROL_BANK_ID);
-
-    lights = new int[MPK261_NUM_CONTROL_STRIPS];
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      lights[i] = LIGHT_OFF;
-    }
-
-    padMode = controllerState().padModeUser((mode) -> this.onPadModeUpdate(mode));
-
-    recModeEnable = customAction(() -> {
-      lights[REC_MODE_LIGHT] = LIGHT_ON;
-      this.padMode.send(PadEvt.CLIP_REC_BUTTON_ON);
-    });
-    recModeDisable = customAction(() -> { 
-      lights[REC_MODE_LIGHT] = LIGHT_OFF;
-      this.padMode.send(PadEvt.CLIP_REC_BUTTON_OFF);
-    });
+    padMode = state().padMode().connect((mode) -> this.onPadModeUpdate(mode));
   }
 
+  // TODO connect pager state to buttons in bank A
   private void onPadModeUpdate(PadMode mode) {
-    recModeLightUpdate(mode.rec());
-  }
-
-  private void recModeLightUpdate(boolean recMode) {
-    if ( recMode && lights[REC_MODE_LIGHT] != LIGHT_ON ) {
-      lights[REC_MODE_LIGHT] = LIGHT_ON;
-      signalHardwareUpdate();
-    } else if ( ! recMode && lights[REC_MODE_LIGHT] != LIGHT_OFF ) {
-      lights[REC_MODE_LIGHT] = LIGHT_OFF;
-      signalHardwareUpdate();
-    }
-  }
-
-  @Override
-  public void onHardwareUpdate() {
-    for (int light = 0; light < MPK261_NUM_CONTROL_STRIPS; light++)
-      syncLight(REC_MODE_LIGHT);
-  }
-
-  private void syncLight(int pageIdx) {
-    if (midi0Out == null)
-      return;
-
-    midi0Out.sendMidi(CONTROL_BANK_CC_STATUS_BYTE, CONTROL_BANK_SOLO_CC[pageIdx], lights[pageIdx]);
+    S(REC_MODE_BUTTON).setState(mode.rec() ? ButtonState.PRESSED : ButtonState.RELEASED);
   }
 
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      S[i].pressedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
-      S[i].releasedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_RELEASED_VAL));
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiIn(midiIn, midiIns);
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -120,17 +78,16 @@ public class HWControlBankC extends HWControlBank implements HWIHasHost, HWIMPKS
   }
 
   @Override
-  public void bindMidi() {
-
-    // rec clip pad mode
-    S[REC_MODE_LIGHT].pressedAction().addBinding(recModeEnable);
-    S[REC_MODE_LIGHT].releasedAction().addBinding(recModeDisable);
+  public void bindMidiIn() {
+    S(REC_MODE_BUTTON).bindTo(state().padMode(), (mode) -> mode.rec(), PadEvt.CLIP_REC_BUTTON_ON, PadEvt.CLIP_REC_BUTTON_OFF);
+    S(CLIP_OVERDUB_BUTTON).bindTo(state().bitwig().clipOverdub());
   }
 
   @Override
-  public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
-    midi0Out = midiOut;
-    signalHardwareUpdate();
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiOut(midiOut, midiOuts);
+    }
   }
 
 }

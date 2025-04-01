@@ -1,30 +1,49 @@
 package se.loge.bwcontrol.common;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.function.Function;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
+import com.bitwig.extension.controller.api.HardwareActionBindable;
 
-public class CState<S, E> implements HWIHasHost {
+import se.loge.bwcontrol.common.ifc.HasBWHost;
+
+public class CStateField<S, E> implements HasBWHost {
   private S st;
-  private Function<SPair<S, E>, S> trans;
+  private Function<CPair<S, E>, S> trans;
   private List<CStateConn<S, E>> conns;
+  private Queue<E> evts;
+  private boolean handlingEvts;
 
-  private CState<S, E> self = this;
+  private CStateField<S, E> self = this;
 
-  public CState(S s, Function<SPair<S, E>, S> t) {
+  private CStateField(S s, Function<CPair<S, E>, S> t) {
     this.st = s;
     this.trans = t;
     this.conns = new ArrayList<>();
+    this.evts = new LinkedList<>();
+    this.handlingEvts = false;
   }
 
-  public CState(Function<SPair<S, E>, S> t) {
+  public CStateField(Function<CPair<S, E>, S> t) {
     this(null, t);
   }
 
   public S get() {
     return st;
+  }
+
+  private void handleEvts() {
+    if ( handlingEvts )
+      return;
+
+    handlingEvts = true;
+    while ( ! evts.isEmpty() ) {
+      handle(evts.poll());
+    }
+    handlingEvts = false;
   }
 
   private void handle(E e) {
@@ -33,8 +52,7 @@ public class CState<S, E> implements HWIHasHost {
     }
 
     S ol = this.st;
-    S nw = trans.apply(SPair.p(ol, e));
-
+    S nw = trans.apply(CPair.p(ol, e));
 
     println(String.format("%s -{ %s }-> %s", ol, e, nw));
 
@@ -50,14 +68,23 @@ public class CState<S, E> implements HWIHasHost {
     }
   }
 
+  private boolean recv(E e) {
+    if ( st != null ) {
+      evts.add(e);
+      handleEvts();
+      return true;
+    }
+    return false;
+  }
+
   public CStateConn<S, E> connect(CStateCallback<S> onUpd) {
     CStateConn<S, E> conn = new CStateConn<S, E>() {
       public S get() {
         return self.st;
       }
 
-      public void send(E e) {
-        handle(e);
+      public boolean send(E e) {
+        return recv(e);
       }
 
       void onUpdate(S s) {
@@ -84,7 +111,10 @@ public class CState<S, E> implements HWIHasHost {
 
   public abstract class CStateConn<S, E> {
     public abstract S get();
-    public abstract void send(E evt);
+    public abstract boolean send(E evt);
+    public HardwareActionBindable sendAction(E evt) {
+      return customAction(() -> this.send(evt));
+    }
     abstract void onUpdate(S s);
   }
 

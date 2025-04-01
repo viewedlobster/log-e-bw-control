@@ -18,13 +18,11 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware.ifc;
+package se.loge.bwcontrol.common.ifc;
 
-import se.loge.bwcontrol.common.ExtensionStore;
+import com.bitwig.extension.controller.api.MidiIn;
 
-public interface HWIHasOutputState {
-  public void onHardwareUpdate();
-  default public void signalHardwareUpdate() {
-    ExtensionStore.getStore().signalHardwareUpdate(this);
-  }
+public interface CMidiIn {
+  public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns);
+  public void bindMidiIn();
 }

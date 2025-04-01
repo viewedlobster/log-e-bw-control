@@ -18,35 +18,40 @@
  *
  */
 
-package se.loge.bwcontrol.mpk.hardware.ifc;
+package se.loge.bwcontrol.common.ifc;
 
 import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
+import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.Transport;
 
-import se.loge.bwcontrol.common.ExtensionStore;
+import se.loge.bwcontrol.common.BWHost;
 
-public interface HWIHasHost {
-  public default ControllerHost host() {
-    return ExtensionStore.getStore().getHost();
+public interface HasBWHost {
+  static public ControllerHost host() {
+    return BWHost.host();
   }
 
   public default Transport transport() {
-    return ExtensionStore.getStore().getTransport();
+    return BWHost.transport();
   }
 
   public default CursorTrack primaryTrack() {
-    return ExtensionStore.getStore().getPrimaryTrackCursor();
+    return BWHost.primaryTrack();
   }
 
   public default CursorDevice primaryDevice() {
-    return ExtensionStore.getStore().getPrimaryDeviceCursor();
+    return BWHost.primaryDevice();
   }
 
   public default CursorDevice primaryInstrument() {
-    return ExtensionStore.getStore().getPrimaryInstrumentCursor();
+    return BWHost.primaryInstrument();
+  }
+
+  public default HardwareSurface surface() {
+    return BWHost.surface();
   }
 
   public default HardwareActionBindable customAction(Runnable r, String descr) {
@@ -57,12 +62,12 @@ public interface HWIHasHost {
     return host().createAction(r, () -> { return "log-e-bw-control internal action"; });
   }
 
-  public default void println(String s) {
-    host().println(s);
+  public default void println(String fmt, Object... objs) {
+    host().println(String.format(fmt, objs));
   }
 
-  public default void errorln(String s) {
-    host().errorln(s);
+  public default void errorln(String fmt, Object... objs) {
+    host().errorln(String.format(fmt, objs));
   }
 
 }

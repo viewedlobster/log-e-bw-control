@@ -31,19 +31,18 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
 
-import se.loge.bwcontrol.common.CState;
+import se.loge.bwcontrol.common.CStateField;
 import se.loge.bwcontrol.common.SysexBuilder;
+import se.loge.bwcontrol.common.ifc.HasOutputState;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiOut;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
 import se.loge.bwcontrol.mpk.MPKConst;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
-import se.loge.bwcontrol.mpk.state.MPKState.PadEvt;
-import se.loge.bwcontrol.mpk.state.MPKState.PadMode;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadMode;
 
-public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWIMidiIn,  HWIMidiOut, HWIMPKStateAccess {
+public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIMPKStateAccess {
 
   static final PadColor REC_OCCUPIED_COLOR = PadColor.RED;
   static final PadColor REC_EMPTY_COLOR = PadColor.GREY;
@@ -52,7 +51,6 @@ public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWI
   final int padIdx;
   final HardwareButton pad;
   final MultiStateHardwareLight light;
-  final HardwareSurface surface;
   PadColor color;
   PadColor pressedColor;
   MidiOut midiRemoteOut;
@@ -60,16 +58,15 @@ public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWI
   HardwareActionBinding binding;
   DrumPad drumPad;
   private ClipLauncherSlot primaryClip;
-  private HardwareActionBindable pressedAction;
-  private CState<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
+  private HardwareActionBindable recClip;
+  private CStateField<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
 
-  public HWPad(HardwareSurface surface, int padIdx, String bankId,
-               int note, DrumPad pad, ClipLauncherSlot primaryClip) {
-    this.surface = surface;
+  public HWPad(int padIdx, String bankId, int note, DrumPad pad,
+      ClipLauncherSlot primaryClip) {
     this.padIdx = padIdx;
-    this.pad = surface.createHardwareButton(
+    this.pad = surface().createHardwareButton(
       String.format("pad_%s_%d", bankId, padIdx));
-    this.light = surface.createMultiStateHardwareLight(
+    this.light = surface().createMultiStateHardwareLight(
       String.format("pad_led_%s_%d", bankId, padIdx));
     this.color = PadColor.RED;
     this.pressedColor = PadColor.GREY;
@@ -77,19 +74,17 @@ public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWI
     this.drumPad = pad;
     this.primaryClip = primaryClip;
 
-    this.padMode = controllerState().padModeUser((mode) -> this.onPadModeUpdate(mode));
+    this.padMode = state().padMode().connect((mode) -> this.onPadModeUpdate(mode));
 
     // recAction depends on primary clip slot existing
-    this.pressedAction = customAction(
+    this.recClip = customAction(
       () -> {
-        println("trying to start record");
-        if ( this.primaryClip != null ) {
+        if ( this.primaryClip != null && padMode.get().rec() ) {
           println("starting record");
           padMode.send(PadEvt.CLIP_REC_PAD_PRESSED);
           this.primaryClip.record();
         }
-      },
-      "pressed pad " + note + "action"
+      }
     );
     // TODO can recAction be replaced by two actions?
 
@@ -253,9 +248,8 @@ public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWI
   }
 
   @Override
-  public void bindMidi() {
-    //this.pressedAction.addBinding(pad.pressedAction());
-    pad.pressedAction().addBinding(this.pressedAction);
+  public void bindMidiIn() {
+    pad.pressedAction().addBinding(this.recClip);
   }
 
   @Override
@@ -271,10 +265,6 @@ public class HWPad implements HWIHasHost, HWIMidiBinding, HWIHasOutputState, HWI
   @Override
   public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
     midiRemoteOut = midiOuts[0];
-  //  light.onUpdateHardware(() -> {
-  //    signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_COLOR_ALL);
-  //    signalHardwareUpdate(MPKConstants.UPDATE_TYPE_PAD_PRESSED_COLOR_ALL);
-  //  });
   }
 
   /* Helper classes */

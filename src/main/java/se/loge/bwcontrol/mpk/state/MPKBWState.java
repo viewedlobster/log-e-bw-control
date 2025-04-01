@@ -1,0 +1,94 @@
+package se.loge.bwcontrol.mpk.state;
+
+import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
+import com.bitwig.extension.controller.api.HardwareSlider;
+import com.bitwig.extension.controller.api.RelativeHardwareKnob;
+import com.bitwig.extension.controller.api.RemoteControl;
+import com.bitwig.extension.controller.api.SettableBooleanValue;
+
+import se.loge.bwcontrol.common.CStateField;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
+import se.loge.bwcontrol.mpk.MPKConst;
+import se.loge.bwcontrol.mpk.state.MPKCState.ControlPager;
+import se.loge.bwcontrol.mpk.state.MPKCState.PagerEvt;
+
+public class MPKBWState implements HasBWHost {
+
+  private CursorRemoteControlsPage controlBankARemoteKnobs;
+  private CursorRemoteControlsPage controlBankARemoteFaders;
+
+  private CStateField<ControlPager, PagerEvt>.CStateConn<ControlPager, PagerEvt> pager;
+
+  public MPKBWState() {
+    controlBankARemoteKnobs = primaryInstrument().createCursorRemoteControlsPage(
+      "MPK Bank A Knobs", MPKConst.MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-knobs");
+    controlBankARemoteKnobs.selectedPageIndex().markInterested();
+    controlBankARemoteKnobs.pageCount().markInterested();
+
+    controlBankARemoteFaders = primaryInstrument().createCursorRemoteControlsPage(
+      "MPK Bank A Faders", MPKConst.MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-faders");
+    controlBankARemoteFaders.selectedPageIndex().markInterested();
+    controlBankARemoteFaders.pageCount().markInterested();
+  }
+
+  public void bindInstrumentKnobRemotes(RelativeHardwareKnob[] knobs) {
+    RemoteControl r;
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      /* K1-K8 are bound to remote controls page */
+      r = controlBankARemoteKnobs.getParameter(i);
+      r.setIndication(true);
+      r.addBinding(knobs[i]);
+    }
+  }
+
+  public void bindInstrumentFaderRemotes(HardwareSlider[] faders) {
+    RemoteControl r;
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      /* F1-F8 are bound to remote controls page */
+      r = controlBankARemoteFaders.getParameter(i);
+      r.setIndication(true);
+      r.addBinding(faders[i]);
+    }
+  }
+
+  public SettableBooleanValue clipOverdub() {
+    return transport().isClipLauncherOverdubEnabled();
+  }
+
+
+  // TODO encapsulate in mpkstate: controllerstate, hoststate
+
+  void connectMPKState(MPKCState s) {
+    pager = s.instrumentPagerUser((p) -> onPagerUpdate(p));
+  }
+
+  private void onPagerUpdate(ControlPager pagerUpd) {
+    boolean overIndexed = false;
+
+    if (pagerUpd.knobPage < 0) {
+      // TODO does this fuck things up?
+      controlBankARemoteKnobs.selectedPageIndex().set(-1);
+    } else if (pagerUpd.knobPage <
+        controlBankARemoteKnobs.pageCount().get() ) {
+      controlBankARemoteKnobs.selectedPageIndex().set(pagerUpd.knobPage);
+    } else {
+      overIndexed = true;
+    }
+
+    if (pagerUpd.faderPage < 0) {
+      // TODO does this fuck things up?
+      controlBankARemoteFaders.selectedPageIndex().set(-1);
+    } else if (pagerUpd.faderPage <
+        controlBankARemoteFaders.pageCount().get()) {
+      controlBankARemoteFaders.selectedPageIndex().set(pagerUpd.faderPage);
+    } else {
+      overIndexed = true;
+    }
+
+    if (overIndexed) {
+      pager.send(PagerEvt.bwPageCount(
+        controlBankARemoteKnobs.pageCount().get(), controlBankARemoteFaders.pageCount().get()));
+    }
+
+  }
+}

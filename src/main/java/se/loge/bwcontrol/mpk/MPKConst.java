@@ -25,12 +25,12 @@ public class MPKConst {
   public static final int UPDATE_TYPE_PAD_PRESSED_COLOR_ALL = 2;
 
 
-  /* Grabbed from Akai js controller script */
+  /* MPK261 specifics */
   public static final int MPK261_PRODUCT_ID = 0x25;
+  public static final int MPK261_NUM_CONTROL_STRIPS = 8;
 
   /* Sysex stuff */
   public static final int MPK_PAD_LIGHT_COLOR_MIN = 1404;
   public static final int MPK_PAD_LIGHT_PRESSED_COLOR_MIN = 1468;
-
 
 }

@@ -24,109 +24,64 @@ import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
 import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
-import com.bitwig.extension.controller.api.RemoteControl;
 
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIUsingCallbacks;
+import se.loge.bwcontrol.common.CStateField;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
+import se.loge.bwcontrol.mpk.MPKConst;
+import se.loge.bwcontrol.mpk.hardware.button.HWCCToggleButton.ButtonState;
+import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
+import se.loge.bwcontrol.mpk.state.MPKCState;
+import se.loge.bwcontrol.mpk.state.MPKCState.ControlPager;
+import se.loge.bwcontrol.mpk.state.MPKCState.PagerEvt;
 
-public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsingCallbacks {
+public class HWControlBankA extends HWControlBank implements HasBWHost, HWIMPKStateAccess {
   static final String CONTROL_BANK_ID = "A";
 
-  static final int CONTROL_BANK_MIDI_CHANNEL = 0;
   static final int[] CONTROL_BANK_KNOB_CC = { 3, 9, 14, 15, 16, 17, 20, 19 };
   static final int[] CONTROL_BANK_FADER_CC = { 18, 21, 22, 23, 24, 25, 26, 27, };
   static final int[] CONTROL_BANK_SOLO_CC = { 28, 29, 30, 31, 35, 41, 46, 47 };
 
   static final int CONTROL_BANK_CC_STATUS_BYTE = 0xb0 + CONTROL_BANK_MIDI_CHANNEL;
 
-  static final int LIGHT_ON = 127;
-  static final int LIGHT_OFF = 0;
+  private CStateField<ControlPager, PagerEvt>.CStateConn<ControlPager, PagerEvt> pager;
 
-  private MidiOut midi0Out;
+  public HWControlBankA() {
+    super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC, CONTROL_BANK_FADER_CC, CONTROL_BANK_SOLO_CC);
 
-  private CursorRemoteControlsPage controlsF;
-  private CursorRemoteControlsPage controlsK;
-
-  private CursorRemoteControlsPage activeCursor;
-
-  private int[] lights;
-
-  public HWControlBankA(HardwareSurface surface) {
-    super(surface, CONTROL_BANK_ID);
-
-    controlsK = primaryInstrument().createCursorRemoteControlsPage(
-      "MPK Bank A Knobs", MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-knobs");
-    controlsF = primaryInstrument().createCursorRemoteControlsPage(
-      "MPK Bank A Faders", MPK261_NUM_CONTROL_STRIPS, "mpk-bank-a-faders");
-
-    controlsK.selectedPageIndex().markInterested();
-    controlsK.pageCount().markInterested();
-    controlsF.selectedPageIndex().markInterested();
-    controlsF.pageCount().markInterested();
-
-    activeCursor = controlsK;
-    lights = new int[]{ 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    controlsK.selectedPageIndex().addValueObserver(val -> { if (isActive(controlsK)) updateLights(val, false); });
-    controlsF.selectedPageIndex().addValueObserver(val -> { if (isActive(controlsF)) updateLights(val, true); });
-
+    this.pager = state().instrumentPager().connect((pager) -> onPagerStateUpdate(pager));
   }
 
-  boolean isActive(CursorRemoteControlsPage c) {
-    return c == activeCursor;
-  }
+  private void onPagerStateUpdate(MPKCState.ControlPager pager) {
+    switch (pager.activePager) {
+      case KNOB:
+        S(MPKConst.MPK261_NUM_CONTROL_STRIPS).setState(ButtonState.RELEASED); // S8
 
-  private void updateLights(int pageIdx, boolean apLight) {
+        for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS - 1; i++) {
+          if (pager.knobPage == i) {
+            S(i + 1).setState(ButtonState.PRESSED);
+          } else {
+            S(i + 1).setState(ButtonState.RELEASED);
+          }
+        }
+        break;
+      case FADER:
+        S(MPKConst.MPK261_NUM_CONTROL_STRIPS).setState(ButtonState.PRESSED); // S8
 
-    /* reset lights */
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      lights[i] = LIGHT_OFF;
+        for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS - 1; i++) {
+          if (pager.faderPage == i) {
+            S(i + 1).setState(ButtonState.PRESSED);
+          } else {
+            S(i + 1).setState(ButtonState.RELEASED);
+          }
+        }
+        break;
     }
-
-    /* active cursor light */
-    if (apLight) {
-      lights[MPK261_NUM_CONTROL_STRIPS - 1] = LIGHT_ON;
-    }
-
-    /* page light */
-    if (pageIdx >= 0 && pageIdx < MPK261_NUM_CONTROL_STRIPS) {
-
-      assert(pageIdx < MPK261_NUM_CONTROL_STRIPS - 1);
-
-      lights[pageIdx] = LIGHT_ON;
-    }
-
-    /* dont send data if midi output is not initialized yet */
-    if (midi0Out == null)
-      return;
-    
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      midi0Out.sendMidi(CONTROL_BANK_CC_STATUS_BYTE, CONTROL_BANK_SOLO_CC[i], lights[i]);
-    }
-  }
-
-  private void syncLight(int pageIdx) {
-    if (midi0Out == null)
-      return;
-
-    midi0Out.sendMidi(CONTROL_BANK_CC_STATUS_BYTE, CONTROL_BANK_SOLO_CC[pageIdx], lights[pageIdx]);
-  }
-
-  @SuppressWarnings("unused")
-  private void printLights() {
-    println(String.format("bank-a-lights: { %d, %d, %d, %d, %d, %d, %d, %d }",
-      lights[0], lights[1], lights[2], lights[3], lights[4], lights[5], lights[6], lights[7]));
   }
 
   @Override
   public void connectMidiIn(MidiIn midiIn, MidiIn... midiIns) {
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      S[i].pressedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_PRESSED_VAL));
-      S[i].releasedAction().setActionMatcher(
-        midiIn.createCCActionMatcher(CONTROL_BANK_MIDI_CHANNEL,
-          CONTROL_BANK_SOLO_CC[i], CONTROL_BANK_SOLO_RELEASED_VAL));
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiIn(midiIn, midiIns);
 
       F[i].setAdjustValueMatcher(midiIn.createAbsoluteCCValueMatcher(
         CONTROL_BANK_MIDI_CHANNEL, CONTROL_BANK_FADER_CC[i]));
@@ -136,6 +91,7 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
     }
   }
 
+  // TODO remove this comment...
   /*
    * This looks like a mess so here is a rundown:
    * 
@@ -153,67 +109,38 @@ public class HWControlBankA extends HWControlBank implements HWIHasHost, HWIUsin
    * syncLight).
    */
   @Override
-  public void bindMidi() {
-    RemoteControl r;
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS; i++) {
-      /* K1-K8 and F1-F8 are bound to remote controls page */
-      r = controlsK.getParameter(i); r.setIndication(true); r.addBinding(K[i]);
-      r = controlsF.getParameter(i); r.setIndication(true); r.addBinding(F[i]);
+  public void bindMidiIn() {
+
+    state().bitwig().bindInstrumentFaderRemotes(F);
+    state().bitwig().bindInstrumentKnobRemotes(K);
+
+    // page select (0-6) for S1-S7
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS - 1; i++) {
+      final int icpy = i;
+      S[i].setPressedAction(customAction(() -> {
+        pager.send(PagerEvt.selectPage(icpy));
+      }));
+      S[i].setReleasedAction(customAction(() -> { syncButtonState(); }));
     }
 
-    // bind to select page, but check that page count is enough,
-    // otherwise just make sure light is synched with internal state
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
-      final int icopy = i;
-      S[i].pressedAction().addBinding(customAction(
-        () -> {
-          if (icopy < activeCursor.pageCount().get()) {
-            activeCursor.selectedPageIndex().set(icopy);
-          } else {
-            syncLight(icopy);
-          }
-        }
-      ));
-    }
+    // pager toggle (fader/knob) for S8 (pressed/released)
+    S(MPKConst.MPK261_NUM_CONTROL_STRIPS).setPressedAction(customAction(() -> {
+      pager.send(PagerEvt.switchPager(PagerEvt.FADER_PAGER));
+    }));
+    S(MPKConst.MPK261_NUM_CONTROL_STRIPS).setReleasedAction(customAction(() -> {
+      pager.send(PagerEvt.switchPager(PagerEvt.KNOB_PAGER));
+    }));
+  }
 
-    // released action just sync light with internal state
-    for (int i = 0; i < MPK261_NUM_CONTROL_STRIPS - 1; i++) {
-      final int icopy = i;
-      S[i].releasedAction().addBinding(customAction(
-        () -> {
-          syncLight(icopy);
-        }
-      ));
-    }
-
-    S[MPK261_NUM_CONTROL_STRIPS-1].pressedAction().addBinding(customAction(
-      () -> {
-        if (activeCursor == controlsF) {
-          println("OOPS -- cb:A:S8 pressed: state mismatch between controller and host");
-        } else {
-          activeCursor = controlsF;
-          updateLights(activeCursor.selectedPageIndex().get(), true);
-        }
-      }
-    ));
-
-    S[MPK261_NUM_CONTROL_STRIPS-1].releasedAction().addBinding(customAction(
-      () -> {
-        if (activeCursor == controlsK) {
-          println("OOPS -- cb:A:S8 released: state mismatch between controller and host");
-        } else {
-          activeCursor = controlsK;
-          updateLights(activeCursor.selectedPageIndex().get(), false);
-        }
-      }
-    ));
-
+  private void syncButtonState() {
+    onPagerStateUpdate(pager.get());
   }
 
   @Override
-  public void connectMidiOut(MidiOut midiOut, MidiOut... midiIns) {
-    midi0Out = midiOut;
-    updateLights(activeCursor.selectedPageIndex().get(), isActive(controlsF));
+  public void connectMidiOut(MidiOut midiOut, MidiOut... midiOuts) {
+    for (int i = 0; i < MPKConst.MPK261_NUM_CONTROL_STRIPS; i++) {
+      S[i].connectMidiOut(midiOut, midiOuts);
+    }
   }
 
 

@@ -26,21 +26,19 @@ import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
 
-import se.loge.bwcontrol.common.CState;
+import se.loge.bwcontrol.common.CStateField;
 import se.loge.bwcontrol.common.SysexBuilder;
+import se.loge.bwcontrol.common.ifc.HasOutputState;
+import se.loge.bwcontrol.common.ifc.CMidiIn;
+import se.loge.bwcontrol.common.ifc.CMidiOut;
+import se.loge.bwcontrol.common.ifc.HasBWHost;
 import se.loge.bwcontrol.mpk.hardware.NoteRange;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasHost;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIHasOutputState;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiBinding;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiIn;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWIMidiOut;
-import se.loge.bwcontrol.mpk.hardware.ifc.HWINoteInput;
-import se.loge.bwcontrol.mpk.state.MPKState.PadEvt;
-import se.loge.bwcontrol.mpk.state.MPKState.PadMode;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
+import se.loge.bwcontrol.mpk.state.MPKCState.PadMode;
 import se.loge.bwcontrol.mpk.MPKConst;
 
-public class HWPads implements HWIHasHost, HWIMidiBinding, HWIMidiIn, HWIMidiOut, HWINoteInput, HWIHasOutputState, HWIMPKStateAccess {
+public class HWPads implements HasBWHost, CMidiIn, CMidiOut, HasOutputState, HWIMPKStateAccess {
   public static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
   // TODO remove duplication between this and padbank class
   public static final int MPK_PAD_BANK_SIZE = 16;
@@ -64,11 +62,11 @@ public class HWPads implements HWIHasHost, HWIMidiBinding, HWIMidiIn, HWIMidiOut
 
   private ClipLauncherSlotBank primaryClips;
 
-  CState<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
+  CStateField<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
 
-  public HWPads(HardwareSurface hwsurface) {
+  public HWPads() {
     // for global access to mode
-    padMode = controllerState().padModeUser((mode) -> this.onPadModeUpdate(mode));
+    padMode = state().padMode().connect((mode) -> this.onPadModeUpdate(mode));
 
     // set constants for mode switching
     allNotesOff = new Integer[MPK_NUM_MIDI_NOTES];
@@ -85,8 +83,7 @@ public class HWPads implements HWIHasHost, HWIMidiBinding, HWIMidiIn, HWIMidiOut
     padBanks = new HWPadBank[MPK_NUM_PAD_BANKS];
     for (int bankIdx = 0; bankIdx < MPK_NUM_PAD_BANKS; bankIdx++) {
       padBanks[bankIdx] =
-        new HWPadBank(hwsurface,
-          bankIdx,
+        new HWPadBank(bankIdx,
           new NoteRange(MPK_PADS_NOTE_OFFSET + bankIdx*MPK_PAD_BANK_SIZE,
                         MPK_PAD_BANK_SIZE),
           MPK_PAD_BANK_SIZE * bankIdx, primaryClips);
@@ -231,21 +228,16 @@ public class HWPads implements HWIHasHost, HWIMidiBinding, HWIMidiIn, HWIMidiOut
   }
 
   @Override
-  public void bindNoteInput() {
+  public void bindMidiIn() {
+    for (int i = 0; i < MPK_NUM_PAD_BANKS; i++) {
+      padBanks[i].bindMidiIn();
+    }
     noteIn = midi0In.createNoteInput(MPK_PADS_NOTE_INPUT_ID,
       String.format("8%x????", MPK_PADS_MIDI_CHANNEL), // note off
       String.format("9%x????", MPK_PADS_MIDI_CHANNEL), // note on
       String.format("a%x????", MPK_PADS_MIDI_CHANNEL), // poly aftertouch
       String.format("d%x????", MPK_PADS_MIDI_CHANNEL) // mono aftertouch
       );
-    // noteIn.setKeyTranslationTable(allNotesOff);
-  }
-
-  @Override
-  public void bindMidi() {
-    for (int i = 0; i < MPK_NUM_PAD_BANKS; i++) {
-      padBanks[i].bindMidi();
-    }
   }
 
   @Override
