@@ -20,7 +20,6 @@
 
 package se.loge.bwcontrol.mpk.hardware.control;
 
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 

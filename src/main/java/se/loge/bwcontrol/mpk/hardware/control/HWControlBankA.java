@@ -20,13 +20,10 @@
 
 package se.loge.bwcontrol.mpk.hardware.control;
 
-import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
 import se.loge.bwcontrol.common.CStateField;
-import se.loge.bwcontrol.common.ifc.HasBWHost;
 import se.loge.bwcontrol.mpk.MPKConst;
 import se.loge.bwcontrol.mpk.hardware.button.HWCCToggleButton.ButtonState;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
@@ -34,7 +31,7 @@ import se.loge.bwcontrol.mpk.state.MPKCState;
 import se.loge.bwcontrol.mpk.state.MPKCState.ControlPager;
 import se.loge.bwcontrol.mpk.state.MPKCState.PagerEvt;
 
-public class HWControlBankA extends HWControlBank implements HasBWHost, HWIMPKStateAccess {
+public class HWControlBankA extends HWControlBank implements HWIMPKStateAccess {
   static final String CONTROL_BANK_ID = "A";
 
   static final int[] CONTROL_BANK_KNOB_CC = { 3, 9, 14, 15, 16, 17, 20, 19 };

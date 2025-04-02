@@ -2,7 +2,6 @@ package se.loge.bwcontrol.mpk.hardware.button;
 
 import java.util.function.Function;
 
-import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareActionBinding;
 import com.bitwig.extension.controller.api.HardwareButton;
@@ -25,6 +24,7 @@ public class HWCCToggleButton implements HasBWHost, CMidiIn, CMidiOut, HasOutput
 
   static final int CC_STATUS_BYTE_BASE = 0xb0;
 
+  @SuppressWarnings("unused")
   private final String id;
   private final int pressedVal;
   private final int releasedVal;
@@ -36,8 +36,11 @@ public class HWCCToggleButton implements HasBWHost, CMidiIn, CMidiOut, HasOutput
 
   private ButtonState state;
 
+  @SuppressWarnings("unused")
   private HardwareActionBinding statePressedBinding;
+  @SuppressWarnings("unused")
   private HardwareActionBinding stateReleasedBinding;
+
   private HardwareActionBinding pressedBinding;
   private HardwareActionBinding releasedBinding;
 

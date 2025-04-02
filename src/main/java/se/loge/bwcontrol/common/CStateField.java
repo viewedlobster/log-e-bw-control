@@ -109,6 +109,7 @@ public class CStateField<S, E> implements HasBWHost {
     public abstract void run(S s);
   }
 
+  @SuppressWarnings("hiding")
   public abstract class CStateConn<S, E> {
     public abstract S get();
     public abstract boolean send(E evt);

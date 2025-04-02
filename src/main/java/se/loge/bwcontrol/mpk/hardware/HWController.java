@@ -18,31 +18,9 @@
  *
  */
 
- // Some notes for future implementation?
-
-// registerMidiCallback(midi0In, (msg) -> onMidi0Action(msg));
-/* S1-S4 are bound to knob and fader remote controls page navigation */ 
-/*S[0].pressedAction().addBinding(controlsK.selectPreviousAction());
-S[1].pressedAction().addBinding(controlsK.selectNextAction());
-S[2].pressedAction().addBinding(controlsF.selectPreviousAction());
-S[3].pressedAction().addBinding(controlsF.selectNextAction());
-*/
-/* S5-S8 remain unbound */
-/* Ideas for use
- * - setting pad mode: 
- *   * play instrument
- *   * play clips current track,
- *   * rec clips current track, 
- *   * global queues/actions (i.e. bound manually)
- */
-// S[4].pressedAction().addBinding(null);
-// S[5].pressedAction().addBinding(null);
-// S[6].pressedAction().addBinding(null);
-// S[7].pressedAction().addBinding(null);
 package se.loge.bwcontrol.mpk.hardware;
 
 import com.bitwig.extension.controller.ControllerExtension;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 

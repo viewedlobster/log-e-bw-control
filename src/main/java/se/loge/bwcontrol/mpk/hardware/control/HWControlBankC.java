@@ -20,21 +20,14 @@
 
 package se.loge.bwcontrol.mpk.hardware.control;
 
-import com.bitwig.extension.controller.api.HardwareActionBindable;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
-import se.loge.bwcontrol.common.CStateField;
-import se.loge.bwcontrol.common.ifc.HasOutputState;
-import se.loge.bwcontrol.common.ifc.HasBWHost;
 import se.loge.bwcontrol.mpk.MPKConst;
-import se.loge.bwcontrol.mpk.hardware.button.HWCCToggleButton.ButtonState;
 import se.loge.bwcontrol.mpk.hardware.ifc.HWIMPKStateAccess;
 import se.loge.bwcontrol.mpk.state.MPKCState.PadEvt;
-import se.loge.bwcontrol.mpk.state.MPKCState.PadMode;
 
-public class HWControlBankC extends HWControlBank implements HasBWHost, HWIMPKStateAccess {
+public class HWControlBankC extends HWControlBank implements HWIMPKStateAccess {
   static final String CONTROL_BANK_ID = "C";
 
   static final int CONTROL_BANK_MIDI_CHANNEL = 0;

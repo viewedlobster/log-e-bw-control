@@ -21,7 +21,6 @@
 package se.loge.bwcontrol.mpk.hardware.pad;
 
 import com.bitwig.extension.controller.api.ClipLauncherSlotBank;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.NoteInput;
@@ -40,7 +39,7 @@ import se.loge.bwcontrol.mpk.MPKConst;
 
 public class HWPads implements HasBWHost, CMidiIn, CMidiOut, HasOutputState, HWIMPKStateAccess {
   public static final String MPK_PADS_NOTE_INPUT_ID = "mpk_pads";
-  // TODO remove duplication between this and padbank class
+  // TODO remove duplication between this and MPKConst
   public static final int MPK_PAD_BANK_SIZE = 16;
   public static final int MPK_NUM_PAD_BANKS = 4;
 

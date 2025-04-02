@@ -26,7 +26,6 @@ import com.bitwig.extension.controller.api.DrumPad;
 import com.bitwig.extension.controller.api.HardwareActionBindable;
 import com.bitwig.extension.controller.api.HardwareActionBinding;
 import com.bitwig.extension.controller.api.HardwareButton;
-import com.bitwig.extension.controller.api.HardwareSurface;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 import com.bitwig.extension.controller.api.MultiStateHardwareLight;
@@ -76,7 +75,6 @@ public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIM
 
     this.padMode = state().padMode().connect((mode) -> this.onPadModeUpdate(mode));
 
-    // recAction depends on primary clip slot existing
     this.recClip = customAction(
       () -> {
         if ( this.primaryClip != null && padMode.get().rec() ) {
@@ -88,11 +86,6 @@ public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIM
     );
     // TODO can recAction be replaced by two actions?
 
-    //light.setColorToStateFunction((c) -> {
-    //  color = PadColor.match(c);
-    //  return new PadLightState(color, pressedColor);
-    //});
-
     primaryTrack().color().markInterested();
     setColor(primaryTrack().color().get(), false);
 
@@ -102,11 +95,6 @@ public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIM
     drumPad.exists().addValueObserver(
       (exsts) -> { updateColorFromDrumPad(true); }
     );
-    //drumPad.exists().addValueObserver(
-    //  (exsts) -> {
-    //    updateColors();
-    //  }
-    //);
 
     if (primaryClip != null) {
       primaryClip.exists().markInterested();
@@ -236,20 +224,9 @@ public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIM
     midiRemoteOut.sendSysex(sysex.build());
   }
 
-  private void setPressedBinding(HardwareActionBindable act) {
-    if (binding != null) {
-      binding.removeBinding();
-    }
-    if (act != null) {
-      binding = act.addBinding(pad.pressedAction());
-    } else {
-      binding = null;
-    }
-  }
-
   @Override
   public void bindMidiIn() {
-    pad.pressedAction().addBinding(this.recClip);
+    binding = pad.pressedAction().addBinding(this.recClip);
   }
 
   @Override
