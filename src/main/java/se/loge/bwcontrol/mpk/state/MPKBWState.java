@@ -55,6 +55,14 @@ public class MPKBWState implements HasBWHost {
     return transport().isClipLauncherOverdubEnabled();
   }
 
+  public SettableBooleanValue arrangerOverdub() {
+    return transport().isArrangerOverdubEnabled();
+  }
+
+  public SettableBooleanValue metronome() {
+    return transport().isMetronomeEnabled();
+  }
+
   void connectMPKState(MPKCState s) {
     // connect to pager
     pager = s.instrumentPager.connect((p) -> onPagerUpdate(p));

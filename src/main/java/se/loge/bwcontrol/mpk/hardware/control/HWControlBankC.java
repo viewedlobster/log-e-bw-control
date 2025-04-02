@@ -47,8 +47,11 @@ public class HWControlBankC extends HWControlBank implements HasBWHost, HWIMPKSt
   static final int LIGHT_ON = 127;
   static final int LIGHT_OFF = 0;
 
-  private static final int REC_MODE_BUTTON = 8;
+  // S(n) = Sn button
+  private static final int METRONOME_BUTTON = 1;
+  private static final int ARRANGER_OVERDUB_BUTTON = 6;
   private static final int CLIP_OVERDUB_BUTTON = 7;
+  private static final int REC_MODE_BUTTON = 8;
 
   public HWControlBankC() {
     super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC,
@@ -70,8 +73,11 @@ public class HWControlBankC extends HWControlBank implements HasBWHost, HWIMPKSt
 
   @Override
   public void bindMidiIn() {
-    S(REC_MODE_BUTTON).bindTo(state().padMode(), (mode) -> mode.rec(), PadEvt.CLIP_REC_BUTTON_ON, PadEvt.CLIP_REC_BUTTON_OFF);
+    S(METRONOME_BUTTON).bindTo(state().bitwig().metronome());
+
+    S(ARRANGER_OVERDUB_BUTTON).bindTo(state().bitwig().arrangerOverdub());
     S(CLIP_OVERDUB_BUTTON).bindTo(state().bitwig().clipOverdub());
+    S(REC_MODE_BUTTON).bindTo(state().padMode(), (mode) -> mode.rec(), PadEvt.CLIP_REC_BUTTON_ON, PadEvt.CLIP_REC_BUTTON_OFF);
   }
 
   @Override
