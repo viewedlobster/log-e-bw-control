@@ -22,16 +22,38 @@ public class BWHost {
   private static CursorDevice primaryInstrumentCursor;
   private static Queue<HasOutputState> needsUpdate;
 
+  private static LogLevel logLevel;
+
   public static final String PRIMARY_CURSOR_NAME = "Primary";
   public static final String PRIMARY_INSTRUMENT_NAME = "Primary Instrument";
   public static final int PRIMARY_CURSOR_TRACK_NUM_SENDS = 0;
   public static final int PRIMARY_CURSOR_TRACK_NUM_SCENES = 8;
   public static final boolean PRIMARY_CURSOR_TRACK_FOLLOW = true;
 
+  public static enum LogLevel {
+    DEBUG(10),
+    INFO(20),
+    WARNING(30),
+    ERROR(40);
+
+    private final int lvl;
+
+    private LogLevel(int lvl) {
+      this.lvl = lvl;
+    }
+
+    public boolean leq(LogLevel other) {
+      return (this.lvl <= other.lvl);
+    }
+  }
 
   public static void setup(ControllerHost h) {
-    host = h;
+    setup(h, LogLevel.INFO);
+  }
 
+  public static void setup(ControllerHost h, LogLevel lvl) {
+    host = h;
+    logLevel = lvl;
     surface = host.createHardwareSurface();
     transport = host.createTransport();
     primaryTrackCursor = host.createCursorTrack(
@@ -79,11 +101,25 @@ public class BWHost {
     }
   }
 
-  public static void println(String fmt, Object... objs) {
-    host.println(String.format(fmt, objs));
+  public static void logln(LogLevel lvl, String fmt, Object... objs) {
+    if (logLevel.leq(lvl)) {
+      switch (lvl) {
+        case DEBUG:
+        case INFO:
+          host.println(lvl+":"+String.format(fmt, objs));
+          break;
+        case WARNING:
+        case ERROR:
+          host.errorln(lvl+":"+String.format(fmt, objs));
+          break;
+      }
+    }
+  }
+  public static void debugln(String fmt, Object... objs) {
+    logln(LogLevel.DEBUG, fmt, objs);
   }
   public static void errorln(String fmt, Object... objs) {
-    host.errorln(String.format(fmt, objs));
+    logln(LogLevel.ERROR, fmt, objs);
   }
 
   public static HardwareActionBindable customAction(Runnable r, String descr) {

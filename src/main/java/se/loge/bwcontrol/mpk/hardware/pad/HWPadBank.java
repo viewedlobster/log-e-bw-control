@@ -64,7 +64,7 @@ public class HWPadBank implements HasBWHost, CMidiIn, CMidiOut, HasOutputState {
 
     for ( int i = 0; i < MPK261_NUM_PADS; i++ ) {
       ClipLauncherSlot clip = i < primaryClips.getSizeOfBank() ? primaryClips.getItemAt(i) : null;
-      println(Integer.toString(range.getNote(i)));
+      debugln(Integer.toString(range.getNote(i)));
       pads[i] = new HWPad(padIdxOffset + i, id, range.getNote(i),
         drumPads.getItemAt(i), clip);
     }

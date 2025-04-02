@@ -54,7 +54,7 @@ public class CStateField<S, E> implements HasBWHost {
     S ol = this.st;
     S nw = trans.apply(CPair.p(ol, e));
 
-    println(String.format("%s -{ %s }-> %s", ol, e, nw));
+    debugln(String.format("%s -{ %s }-> %s", ol, e, nw));
 
     if ( ! nw.equals(ol) ) {
       this.st = nw;

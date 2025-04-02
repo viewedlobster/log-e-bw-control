@@ -91,23 +91,6 @@ public class HWControlBankA extends HWControlBank implements HasBWHost, HWIMPKSt
     }
   }
 
-  // TODO remove this comment...
-  /*
-   * This looks like a mess so here is a rundown:
-   * 
-   * controlsK/F are cursors into remote control pages tagged as such.
-   * We first bind knobs K[0-7] and faders F[0-7] to these cursor pages
-   * 
-   * S[0-6] are then bound to select what page is active, with S[7]
-   * bound to select what selection is active
-   * -- knobs: S[7] == released
-   * -- faders: S[7] == pressed
-   * 
-   * S[0-7] are all in toggle mode, which means we have to add a couple of
-   * additional callback actions just to keep the lights in sync with the
-   * controller extension state (which is why there is so many calls to
-   * syncLight).
-   */
   @Override
   public void bindMidiIn() {
 

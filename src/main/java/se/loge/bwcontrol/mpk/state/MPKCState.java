@@ -1,6 +1,7 @@
 package se.loge.bwcontrol.mpk.state;
 
 import se.loge.bwcontrol.common.BWHost;
+import se.loge.bwcontrol.common.CPair;
 import se.loge.bwcontrol.common.CStateField;
 import se.loge.bwcontrol.common.HWError;
 import se.loge.bwcontrol.common.ifc.HasBWHost;
@@ -133,8 +134,10 @@ public class MPKCState implements HasBWHost {
     }
 
     public ControlPager bound(int kPages, int fPages) {
-      int k = Math.min(this.knobPage, kPages - 1);
-      int f = Math.min(this.faderPage, fPages - 1);
+      int k = Math.max(this.knobPage, 0);
+      int f = Math.max(this.faderPage, 0);
+      k = Math.min(k, kPages - 1);
+      f = Math.min(f, fPages - 1);
       return new ControlPager(k, f, this.activePager);
     }
 
@@ -185,6 +188,23 @@ public class MPKCState implements HasBWHost {
       }
       return new PagerEvt(Type.BW_PAGE_COUNT, ((0xff & kCount) << 8) | (0xff & fCount));
     }
+
+    static CPair<Integer, Integer> pageCount(int data) {
+      return CPair.p((data >> 8) & 0xff, data & 0xff);
+    }
+
+    @Override
+    public String toString() {
+      switch (tpe) {
+        case BW_PAGE_COUNT:
+          return String.format("PagerEvt(%s, %s)", tpe, pageCount(data));
+        case PAGE:
+        case PAGER:
+          return String.format("PagerEvt(%s, %s)", tpe, data);
+        default:
+          return super.toString();
+      }
+    }
   }
   private static ControlPager instrumentPagerTrans(ControlPager p, PagerEvt e) {
     switch (e.tpe) {
@@ -193,7 +213,8 @@ public class MPKCState implements HasBWHost {
     case PAGER:
       return p.pager(e.data > 0 ? ControlPager.Pager.FADER: ControlPager.Pager.KNOB);
     case BW_PAGE_COUNT:
-      return p.bound((e.data >> 8) & 0xff, e.data & 0xff);
+      CPair<Integer, Integer> kf = PagerEvt.pageCount(e.data);
+      return p.bound(kf.fst, kf.snd);
     default:
       throw new MPKStateError("instrumentPagerTrans: unknown event type %s", e.toString());
     }

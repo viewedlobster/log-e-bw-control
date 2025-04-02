@@ -50,18 +50,9 @@ public class HWControlBankC extends HWControlBank implements HasBWHost, HWIMPKSt
   private static final int REC_MODE_BUTTON = 8;
   private static final int CLIP_OVERDUB_BUTTON = 7;
 
-  private CStateField<PadMode, PadEvt>.CStateConn<PadMode, PadEvt> padMode;
-
   public HWControlBankC() {
     super(CONTROL_BANK_ID, CONTROL_BANK_KNOB_CC,
       CONTROL_BANK_FADER_CC, CONTROL_BANK_SOLO_CC);
-
-    padMode = state().padMode().connect((mode) -> this.onPadModeUpdate(mode));
-  }
-
-  // TODO connect pager state to buttons in bank A
-  private void onPadModeUpdate(PadMode mode) {
-    S(REC_MODE_BUTTON).setState(mode.rec() ? ButtonState.PRESSED : ButtonState.RELEASED);
   }
 
   @Override

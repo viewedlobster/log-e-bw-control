@@ -142,7 +142,7 @@ public class HWPads implements HasBWHost, CMidiIn, CMidiOut, HasOutputState, HWI
   private void modeRemap(PadMode mode) {
     // note input on/off
     // actions are mapped in pad class
-    println("remapping pad mode");
+    debugln("remapping pad mode");
     switch (mode.rec) {
     case RECMODE_ON:
       noteIn.setKeyTranslationTable(allNotesOff);
@@ -188,7 +188,7 @@ public class HWPads implements HasBWHost, CMidiIn, CMidiOut, HasOutputState, HWI
     b.add("F7");
 
     byte[] sysex = b.build();
-    println("sending sysex1: " + SysexBuilder.bytesToHexString(sysex));
+    debugln("sending sysex1: " + SysexBuilder.bytesToHexString(sysex));
     if (midiRemoteOut != null) {
       midiRemoteOut.sendSysex(sysex);
     }
@@ -209,7 +209,7 @@ public class HWPads implements HasBWHost, CMidiIn, CMidiOut, HasOutputState, HWI
 
     byte[] sysex = b.build();
     if (midiRemoteOut != null) {
-      println("sending sysex1: " + SysexBuilder.bytesToHexString(sysex));
+      debugln("sending sysex1: " + SysexBuilder.bytesToHexString(sysex));
       midiRemoteOut.sendSysex(sysex);
     }
   }

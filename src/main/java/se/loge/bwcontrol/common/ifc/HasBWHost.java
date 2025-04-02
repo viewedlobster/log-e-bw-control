@@ -62,12 +62,12 @@ public interface HasBWHost {
     return host().createAction(r, () -> { return "log-e-bw-control internal action"; });
   }
 
-  public default void println(String fmt, Object... objs) {
-    host().println(String.format(fmt, objs));
+  public default void debugln(String fmt, Object... objs) {
+    BWHost.debugln(fmt, objs);
   }
 
   public default void errorln(String fmt, Object... objs) {
-    host().errorln(String.format(fmt, objs));
+    BWHost.errorln(fmt, objs);
   }
 
 }

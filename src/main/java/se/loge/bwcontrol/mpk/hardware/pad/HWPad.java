@@ -80,7 +80,7 @@ public class HWPad implements HasBWHost, HasOutputState, CMidiIn, CMidiOut, HWIM
     this.recClip = customAction(
       () -> {
         if ( this.primaryClip != null && padMode.get().rec() ) {
-          println("starting record");
+          debugln("starting record");
           padMode.send(PadEvt.CLIP_REC_PAD_PRESSED);
           this.primaryClip.record();
         }

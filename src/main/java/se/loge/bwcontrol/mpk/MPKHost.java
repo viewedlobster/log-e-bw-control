@@ -12,7 +12,11 @@ public class MPKHost extends BWHost {
   }
 
   public static void setup(ControllerHost h) {
-    BWHost.setup(h);
+    setup(h, LogLevel.INFO);
+  }
+
+  public static void setup(ControllerHost h, LogLevel lvl) {
+    BWHost.setup(h, lvl);
 
     mpkState = new MPKState();
   }

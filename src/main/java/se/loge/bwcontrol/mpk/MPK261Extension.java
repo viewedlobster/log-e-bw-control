@@ -26,6 +26,8 @@ import com.bitwig.extension.controller.api.ControllerHost;
 import com.bitwig.extension.controller.api.MidiIn;
 import com.bitwig.extension.controller.api.MidiOut;
 
+import se.loge.bwcontrol.common.BWHost;
+import se.loge.bwcontrol.common.BWHost.LogLevel;
 import se.loge.bwcontrol.mpk.hardware.HWController;
 
 import com.bitwig.extension.controller.ControllerExtension;
@@ -46,10 +48,11 @@ public class MPK261Extension extends ControllerExtension
    {
       final ControllerHost host = getHost();
 
-      MPKHost.setup(host);
+      MPKHost.setup(host, LogLevel.INFO);
 
       hwController = new HWController();
 
+      // TODO move this into separate method
       MidiIn midiIn0 = host.getMidiInPort(0);
       MidiIn midiIn1 = host.getMidiInPort(1);
       MidiOut midiOut0 = host.getMidiOutPort(0);
@@ -57,9 +60,9 @@ public class MPK261Extension extends ControllerExtension
 
       hwController.connectMidiIn(midiIn0, midiIn1);
       hwController.connectMidiOut(midiOut0, midiOut1);
-
       hwController.bindMidiIn();
 
+      // TODO move this into separate method
       midiIn0.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
       midiIn0.setSysexCallback((String data) -> onSysex0(data));
       midiIn1.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi1(msg));
@@ -68,7 +71,7 @@ public class MPK261Extension extends ControllerExtension
       MPKHost.init();
       MPKHost.updateHardware();
 
-      host.showPopupNotification("MPK 261 Initialized");
+      BWHost.logln(LogLevel.INFO, "log-e-bw-control: Akai MPK261 extension initialized");
    }
 
    @Override
@@ -76,7 +79,7 @@ public class MPK261Extension extends ControllerExtension
    {
       // TODO: Perform any cleanup once the driver exits
       // For now just show a popup notification for verification that it is no longer running.
-      getHost().showPopupNotification("MPK 261 Exited");
+      BWHost.logln(LogLevel.INFO, "log-e-bw-control: Akai MPK261 extension exited");
    }
 
    @Override
@@ -88,38 +91,25 @@ public class MPK261Extension extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi0(ShortMidiMessage msg) 
    {
-      getHost().println("Midi0: " + msg.toString());
-      // TODO: Implement your MIDI input handling code here.
+      BWHost.debugln("Midi0: %s", msg);
    }
 
    /** Called when we receive sysex MIDI message on port 0. */
    private void onSysex0(final String data) 
    {
-      getHost().println("Sysex0: " + data);
-      // MMC Transport Controls:
-      //if (data.equals("f07f7f0605f7"))
-      //      bwTransport.rewind();
-      //else if (data.equals("f07f7f0604f7"))
-      //      bwTransport.fastForward();
-      //else if (data.equals("f07f7f0601f7"))
-      //      bwTransport.stop();
-      //else if (data.equals("f07f7f0602f7"))
-      //      bwTransport.play();
-      //else if (data.equals("f07f7f0606f7"))
-      //      bwTransport.record();
-
+      BWHost.debugln("Sysex0: %s", data);
    }
+
    /** Called when we receive short MIDI message on port 1. */
    private void onMidi1(ShortMidiMessage msg) 
    {
-      // TODO: Implement your MIDI input handling code here.
-      getHost().println("Midi1: " + msg.toString());
+      BWHost.debugln("Midi1: %s", msg);
    }
 
    /** Called when we receive sysex MIDI message on port 1. */
    private void onSysex1(final String data) 
    {
-      getHost().println("Sysex1: " + data);
+      BWHost.debugln("Sysex1: %s", data);
    }
 
 }

@@ -12,4 +12,9 @@ public class CPair<T1, T2> {
   public static <T1, T2>  CPair<T1, T2> p(T1 t1, T2 t2) {
     return new CPair<>(t1, t2);
   }
+
+  @Override
+  public String toString() {
+    return String.format("(%s, %s)", fst, snd);
+  }
 }

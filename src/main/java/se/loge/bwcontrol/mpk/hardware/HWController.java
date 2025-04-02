@@ -95,6 +95,7 @@ public class HWController implements CMidiIn, CMidiOut {
       transport.bindMidiIn();
       dawControl.bindMidiIn();
       pads.bindMidiIn();
+      pianoKeys.bindMidiIn();
 
       for (HWControlBank bank : new HWControlBank[] { bankA, bankB, bankC }) {
          bank.bindMidiIn();

@@ -49,7 +49,7 @@ public class HWCCToggleButton implements HasBWHost, CMidiIn, CMidiOut, HasOutput
     this.id = id;
     this.midiChan = midiChan;
     this.cc = cc;
-    this.ccStatusByte = CC_STATUS_BYTE_BASE + cc;
+    this.ccStatusByte = CC_STATUS_BYTE_BASE + midiChan;
     this.pressedVal = pressedVal;
     this.releasedVal = releasedVal;
 
@@ -127,10 +127,10 @@ public class HWCCToggleButton implements HasBWHost, CMidiIn, CMidiOut, HasOutput
   public void onHardwareUpdate() {
     switch (state) {
       case PRESSED:
-        midi0Out.sendMidi(midiChan, ccStatusByte, pressedVal);
+        midi0Out.sendMidi(ccStatusByte, cc, pressedVal);
         break;
       case RELEASED:
-        midi0Out.sendMidi(midiChan, ccStatusByte, releasedVal);
+        midi0Out.sendMidi(ccStatusByte, cc, releasedVal);
         break;
     }
   }
